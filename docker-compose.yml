@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: orcafin-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: orcafin
+      POSTGRES_USER: orcafin
+      POSTGRES_PASSWORD: orcafin
+    ports:
+      - "5433:5432"
+    volumes:
+      - orcafin-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orcafin"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: orcafin-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: orcafin
+      DB_USER: orcafin
+      DB_PASSWORD: orcafin
+      JWT_SECRET: ${JWT_SECRET:-troque-este-segredo-por-uma-string-base64-longa-e-aleatoria-em-producao}
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: orcafin-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  orcafin-postgres-data:

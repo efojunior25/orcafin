@@ -1,0 +1,9 @@
+package com.orcafin.entity;
+
+public enum PaymentMethod {
+    DINHEIRO,
+    DEBITO,
+    CREDITO,
+    PIX,
+    TRANSFERENCIA
+}

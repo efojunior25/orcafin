@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: orcafin
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:orcafin}
+    username: ${DB_USER:orcafin}
+    password: ${DB_PASSWORD:orcafin}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+server:
+  port: ${SERVER_PORT:8080}
+app:
+  jwt:
+    secret: ${JWT_SECRET:change-this-secret-to-a-long-random-base64-string-in-production-please}
+    expiration-ms: ${JWT_EXPIRATION_MS:604800000}
