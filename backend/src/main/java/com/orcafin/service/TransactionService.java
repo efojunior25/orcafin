@@ -55,7 +55,7 @@ public class TransactionService {
         CreditCard creditCard = (!isTransfer && request.getAccountId() == null)
                 ? getOwnedCreditCard(user, request.getCreditCardId())
                 : null;
-        Category category = getAccessibleCategory(user, request.getCategoryId());
+        Category category = isTransfer ? null : getAccessibleCategory(user, request.getCategoryId());
         Account destinationAccount = isTransfer ? getOwnedAccount(user, requireDestinationAccountId(request)) : null;
         if (isTransfer && destinationAccount.getId().equals(account.getId())) {
             throw new IllegalArgumentException("A conta de destino deve ser diferente da conta de origem");
@@ -106,7 +106,7 @@ public class TransactionService {
         CreditCard newCreditCard = (!isTransfer && request.getAccountId() == null)
                 ? getOwnedCreditCard(user, request.getCreditCardId())
                 : null;
-        Category newCategory = getAccessibleCategory(user, request.getCategoryId());
+        Category newCategory = isTransfer ? null : getAccessibleCategory(user, request.getCategoryId());
         Account newDestinationAccount = isTransfer ? getOwnedAccount(user, requireDestinationAccountId(request)) : null;
         if (isTransfer && newDestinationAccount.getId().equals(newAccount.getId())) {
             throw new IllegalArgumentException("A conta de destino deve ser diferente da conta de origem");
