@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getErrorMessage } from '../utils/errors';
 import './Auth.css';
 
 export default function Login() {
@@ -22,8 +23,8 @@ export default function Login() {
     try {
       await login(email, password);
       navigate('/');
-    } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Não foi possível entrar. Verifique suas credenciais.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Não foi possível entrar. Verifique suas credenciais.'));
     } finally {
       setLoading(false);
     }

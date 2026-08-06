@@ -4,6 +4,7 @@ import type { Budget } from '../api/budgets';
 import * as categoriesApi from '../api/categories';
 import type { Category } from '../api/categories';
 import { formatCurrency } from '../utils/format';
+import { getErrorMessage } from '../utils/errors';
 import './Accounts.css';
 import './Budgets.css';
 
@@ -25,8 +26,8 @@ export default function Budgets() {
       const [b, c] = await Promise.all([budgetsApi.getBudgets(), categoriesApi.getCategories()]);
       setBudgets(b);
       setCategories(c);
-    } catch {
-      setError('Não foi possível carregar os orçamentos.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Não foi possível carregar os orçamentos.'));
     } finally {
       setLoading(false);
     }
@@ -70,8 +71,8 @@ export default function Budgets() {
       }
       setModalOpen(false);
       await load();
-    } catch {
-      setError('Não foi possível salvar o orçamento.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Não foi possível salvar o orçamento.'));
     } finally {
       setSaving(false);
     }
@@ -82,8 +83,8 @@ export default function Budgets() {
     try {
       await budgetsApi.deleteBudget(budget.id);
       await load();
-    } catch {
-      setError('Não foi possível excluir o orçamento.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Não foi possível excluir o orçamento.'));
     }
   }
 

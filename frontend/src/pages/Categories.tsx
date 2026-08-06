@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import * as categoriesApi from '../api/categories';
 import type { Category, CategoryType } from '../api/categories';
+import { getErrorMessage } from '../utils/errors';
 import './Categories.css';
 
 export default function Categories() {
@@ -18,8 +19,8 @@ export default function Categories() {
     try {
       const data = await categoriesApi.getCategories();
       setCategories(data);
-    } catch {
-      setError('Não foi possível carregar as categorias.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Não foi possível carregar as categorias.'));
     } finally {
       setLoading(false);
     }
@@ -40,8 +41,8 @@ export default function Categories() {
       setName('');
       setIcon('');
       await load();
-    } catch {
-      setError('Não foi possível criar a categoria.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Não foi possível criar a categoria.'));
     } finally {
       setSaving(false);
     }
@@ -52,8 +53,8 @@ export default function Categories() {
     try {
       await categoriesApi.deleteCategory(cat.id);
       await load();
-    } catch {
-      setError('Não foi possível excluir a categoria.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Não foi possível excluir a categoria.'));
     }
   }
 

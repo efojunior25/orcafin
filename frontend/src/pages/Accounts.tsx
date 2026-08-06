@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import * as accountsApi from '../api/accounts';
 import type { Account, AccountType } from '../api/accounts';
 import { formatCurrency, accountTypeLabels } from '../utils/format';
+import { getErrorMessage } from '../utils/errors';
 import './Accounts.css';
 
 const typeOptions: AccountType[] = ['CORRENTE', 'POUPANCA', 'CARTEIRA'];
@@ -22,8 +23,8 @@ export default function Accounts() {
     try {
       const data = await accountsApi.getAccounts();
       setAccounts(data);
-    } catch {
-      setError('Não foi possível carregar as contas.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Não foi possível carregar as contas.'));
     } finally {
       setLoading(false);
     }
@@ -58,8 +59,8 @@ export default function Accounts() {
       }
       setModalOpen(false);
       await load();
-    } catch {
-      setError('Não foi possível salvar a conta.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Não foi possível salvar a conta.'));
     } finally {
       setSaving(false);
     }
@@ -70,8 +71,8 @@ export default function Accounts() {
     try {
       await accountsApi.deleteAccount(acc.id);
       await load();
-    } catch {
-      setError('Não foi possível excluir a conta.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Não foi possível excluir a conta.'));
     }
   }
 

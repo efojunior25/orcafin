@@ -8,6 +8,7 @@ import type { CreditCard } from '../api/creditCards';
 import * as categoriesApi from '../api/categories';
 import type { Category } from '../api/categories';
 import { formatCurrency, formatDate, monthRange, todayISO, paymentMethodLabels, recurrenceFrequencyLabels, transactionGroupLabels } from '../utils/format';
+import { getErrorMessage } from '../utils/errors';
 import './Accounts.css';
 import './Transactions.css';
 
@@ -67,8 +68,8 @@ export default function Transactions() {
       setAccounts(acc);
       setCreditCards(cc);
       setCategories(cat);
-    } catch {
-      setError('Não foi possível carregar as transações.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Não foi possível carregar as transações.'));
     } finally {
       setLoading(false);
     }
@@ -173,8 +174,8 @@ export default function Transactions() {
       }
       setModalOpen(false);
       await loadAll();
-    } catch {
-      setError('Não foi possível salvar a transação.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Não foi possível salvar a transação.'));
     } finally {
       setSaving(false);
     }
@@ -185,8 +186,8 @@ export default function Transactions() {
     try {
       await transactionsApi.deleteTransaction(tx.id);
       await loadAll();
-    } catch {
-      setError('Não foi possível excluir a transação.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Não foi possível excluir a transação.'));
     }
   }
 

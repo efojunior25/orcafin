@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import * as creditCardsApi from '../api/creditCards';
 import type { CreditCard } from '../api/creditCards';
 import { formatCurrency } from '../utils/format';
+import { getErrorMessage } from '../utils/errors';
 import './Accounts.css';
 
 export default function CreditCards() {
@@ -22,8 +23,8 @@ export default function CreditCards() {
     try {
       const data = await creditCardsApi.getCreditCards();
       setCards(data);
-    } catch {
-      setError('Não foi possível carregar os cartões.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Não foi possível carregar os cartões.'));
     } finally {
       setLoading(false);
     }
@@ -63,8 +64,8 @@ export default function CreditCards() {
       }
       setModalOpen(false);
       await load();
-    } catch {
-      setError('Não foi possível salvar o cartão.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Não foi possível salvar o cartão.'));
     } finally {
       setSaving(false);
     }
@@ -75,8 +76,8 @@ export default function CreditCards() {
     try {
       await creditCardsApi.deleteCreditCard(card.id);
       await load();
-    } catch {
-      setError('Não foi possível excluir o cartão.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Não foi possível excluir o cartão.'));
     }
   }
 

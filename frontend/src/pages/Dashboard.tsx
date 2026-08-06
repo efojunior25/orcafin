@@ -7,6 +7,7 @@ import type { Account } from '../api/accounts';
 import * as budgetsApi from '../api/budgets';
 import type { Budget } from '../api/budgets';
 import { formatCurrency, formatDate, monthRange, accountTypeLabels } from '../utils/format';
+import { getErrorMessage } from '../utils/errors';
 import './Dashboard.css';
 import './Budgets.css';
 
@@ -34,8 +35,8 @@ export default function Dashboard() {
         setTransactions(tx);
         setAccounts(acc);
         setBudgets(bud);
-      } catch {
-        setError('Não foi possível carregar o dashboard.');
+      } catch (err) {
+        setError(getErrorMessage(err, 'Não foi possível carregar o dashboard.'));
       } finally {
         setLoading(false);
       }
