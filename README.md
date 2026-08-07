@@ -22,6 +22,22 @@ Para parar: `docker compose down` (os dados do Postgres ficam salvos no volume `
 2. Backend: `cd backend && ./mvnw.cmd spring-boot:run`
 3. Frontend: `cd frontend && npm install && npm run dev` (abre em http://localhost:5173)
 
+## Lançamento por texto com IA local (Ollama)
+
+Na página de Transações, digite algo como "Pizza 59,90" no campo de lançamento rápido — a IA interpreta o valor, o tipo (receita/despesa) e sugere uma categoria, e abre o formulário já preenchido para você revisar antes de salvar (nunca salva sozinho).
+
+Isso é opcional e roda separado do resto (`profile ai` do Docker Compose), porque consome bastante recursos:
+
+```bash
+docker compose --profile ai up -d ollama
+docker exec orcafin-ollama ollama pull llama3.1:8b
+```
+
+- **Com GPU NVIDIA** (testado com RTX 3050 6GB): usa CUDA automaticamente se o Docker tiver o NVIDIA Container Toolkit configurado, resposta em ~3-9s.
+- **Sem GPU**: roda na CPU, mas com modelos de 8B fica bem lento numa máquina com 8GB de RAM; nesse caso troque para um modelo bem menor (`OLLAMA_MODEL=llama3.2:1b` no `.env`) — a qualidade da extração piora bastante, mas funciona.
+
+Para parar (libera VRAM/RAM quando não estiver usando): `docker compose stop ollama`.
+
 ## Backup e restauração do banco
 
 Backup manual (gera um `.sql.zip` em `backups/`, mantém os últimos 30 dias):
@@ -54,7 +70,6 @@ Os arquivos de backup **não são versionados no Git** (contêm dados financeiro
 
 ## Próximos passos (fora do MVP atual)
 
-- Entrada de lançamentos via texto livre com LLM local (Ollama)
 - Integração Open Finance (fase 2)
 - App mobile (React Native, reaproveitando lógica do frontend web)
 - Notificações push

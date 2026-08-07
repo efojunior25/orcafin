@@ -1,9 +1,12 @@
 package com.orcafin.controller;
 
+import com.orcafin.dto.ParseTransactionRequest;
+import com.orcafin.dto.ParseTransactionResponse;
 import com.orcafin.dto.TransactionRequest;
 import com.orcafin.dto.TransactionResponse;
 import com.orcafin.entity.User;
 import com.orcafin.security.SecurityUtils;
+import com.orcafin.service.AiParsingService;
 import com.orcafin.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +24,7 @@ import java.util.UUID;
 public class TransactionController {
 
     private final TransactionService transactionService;
+    private final AiParsingService aiParsingService;
 
     @GetMapping
     public ResponseEntity<List<TransactionResponse>> list(
@@ -47,5 +51,11 @@ public class TransactionController {
         User user = SecurityUtils.getCurrentUser();
         transactionService.deleteTransaction(user, id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/parse")
+    public ResponseEntity<ParseTransactionResponse> parse(@Valid @RequestBody ParseTransactionRequest request) {
+        User user = SecurityUtils.getCurrentUser();
+        return ResponseEntity.ok(aiParsingService.parse(user, request.getText()));
     }
 }

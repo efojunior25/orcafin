@@ -7,6 +7,7 @@ import * as creditCardsApi from '../api/creditCards';
 import type { CreditCard } from '../api/creditCards';
 import * as categoriesApi from '../api/categories';
 import type { Category } from '../api/categories';
+import * as aiApi from '../api/ai';
 import { formatCurrency, formatDate, monthRange, todayISO, paymentMethodLabels, recurrenceFrequencyLabels, transactionGroupLabels } from '../utils/format';
 import { getErrorMessage } from '../utils/errors';
 import './Accounts.css';
@@ -53,6 +54,9 @@ export default function Transactions() {
   const [form, setForm] = useState<TransactionInput>(emptyForm([], []));
   const [saving, setSaving] = useState(false);
 
+  const [aiText, setAiText] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+
   async function loadAll() {
     setLoading(true);
     setError('');
@@ -94,6 +98,37 @@ export default function Transactions() {
     setEditing(null);
     setForm(emptyForm(accounts, categories));
     setModalOpen(true);
+  }
+
+  async function handleAiParse() {
+    if (!aiText.trim() || accounts.length === 0) return;
+    setAiLoading(true);
+    setError('');
+    try {
+      const parsed = await aiApi.parseTransactionText(aiText.trim());
+      setEditing(null);
+      setForm({
+        accountId: accounts[0]?.id ?? null,
+        creditCardId: null,
+        categoryId: parsed.categoryId,
+        destinationAccountId: null,
+        type: parsed.type,
+        group: null,
+        amount: parsed.amount,
+        description: parsed.description,
+        date: parsed.date,
+        paymentMethod: 'DEBITO',
+        isRecurring: false,
+        recurrenceFrequency: null,
+        recurrenceEndDate: null,
+      });
+      setAiText('');
+      setModalOpen(true);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Não foi possível interpretar o texto com a IA local.'));
+    } finally {
+      setAiLoading(false);
+    }
   }
 
   function openEdit(tx: Transaction) {
@@ -207,6 +242,30 @@ export default function Transactions() {
         <div className="auth-error">Cadastre ao menos uma conta antes de lançar transações.</div>
       )}
       {error && <div className="auth-error">{error}</div>}
+
+      <div className="card ai-quick-entry">
+        <label htmlFor="ai-text">Lançamento rápido com IA local</label>
+        <div className="ai-quick-entry-row">
+          <input
+            id="ai-text"
+            value={aiText}
+            onChange={(e) => setAiText(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAiParse()}
+            placeholder="Ex: Pizza 59,90"
+            disabled={aiLoading || accounts.length === 0}
+          />
+          <button
+            className="btn btn-secondary"
+            onClick={handleAiParse}
+            disabled={aiLoading || !aiText.trim() || accounts.length === 0}
+          >
+            {aiLoading ? 'Interpretando...' : 'Interpretar'}
+          </button>
+        </div>
+        <div className="ai-quick-entry-hint">
+          Digite algo como "Pizza 59,90" e revise antes de salvar. Requer o container Ollama rodando.
+        </div>
+      </div>
 
       <div className="filters-bar">
         <select value={month} onChange={(e) => setMonth(Number(e.target.value))}>
