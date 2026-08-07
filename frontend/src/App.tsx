@@ -11,6 +11,7 @@ import Accounts from './pages/Accounts';
 import Categories from './pages/Categories';
 import CreditCards from './pages/CreditCards';
 import Budgets from './pages/Budgets';
+import LoginHistory from './pages/LoginHistory';
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -73,6 +74,14 @@ function App() {
               element={
                 <ProtectedLayout>
                   <Budgets />
+                </ProtectedLayout>
+              }
+            />
+            <Route
+              path="/login-history"
+              element={
+                <ProtectedLayout>
+                  <LoginHistory />
                 </ProtectedLayout>
               }
             />

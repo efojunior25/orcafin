@@ -11,6 +11,7 @@ const navItems = [
   { to: '/accounts', label: 'Contas', icon: '🏦', end: false },
   { to: '/credit-cards', label: 'Cartões', icon: '💳', end: false },
   { to: '/categories', label: 'Categorias', icon: '🏷️', end: false },
+  { to: '/login-history', label: 'Acessos', icon: '🔒', end: false },
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {

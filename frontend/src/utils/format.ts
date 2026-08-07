@@ -18,6 +18,13 @@ export function formatDate(dateStr: string): string {
   return `${d}/${m}/${y}`;
 }
 
+export function formatDateTime(isoStr: string): string {
+  if (!isoStr) return '';
+  const date = new Date(isoStr);
+  if (Number.isNaN(date.getTime())) return isoStr;
+  return date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+}
+
 export function todayISO(): string {
   const now = new Date();
   const y = now.getFullYear();
