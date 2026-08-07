@@ -21,7 +21,7 @@ server:
 app:
   jwt:
     secret: ${JWT_SECRET:change-this-secret-to-a-long-random-base64-string-in-production-please}
-    expiration-ms: ${JWT_EXPIRATION_MS:604800000}
+    expiration-ms: ${JWT_EXPIRATION_MS:259200000}
   ollama:
     base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
     model: ${OLLAMA_MODEL:llama3.2:1b}

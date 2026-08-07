@@ -22,9 +22,18 @@ public class WhisperService {
     @Value("${app.whisper.base-url}")
     private String whisperBaseUrl;
 
+    private static final long MAX_AUDIO_BYTES = 10L * 1024 * 1024;
+
     public String transcribe(MultipartFile audioFile) {
         if (audioFile == null || audioFile.isEmpty()) {
             throw new IllegalArgumentException("Nenhum áudio foi enviado.");
+        }
+        if (audioFile.getSize() > MAX_AUDIO_BYTES) {
+            throw new IllegalArgumentException("Áudio muito grande (máximo 10MB).");
+        }
+        String contentType = audioFile.getContentType();
+        if (contentType == null || !contentType.startsWith("audio/")) {
+            throw new IllegalArgumentException("Arquivo enviado não é um áudio válido.");
         }
         try {
             RestClient client = RestClient.create(whisperBaseUrl);

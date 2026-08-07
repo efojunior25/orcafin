@@ -9,7 +9,7 @@ import com.orcafin.entity.User;
 import com.orcafin.repository.LoginAuditRepository;
 import com.orcafin.repository.UserRepository;
 import com.orcafin.security.JwtService;
-import com.orcafin.security.LoginRateLimiterService;
+import com.orcafin.security.RateLimiterService;
 import com.orcafin.security.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -22,6 +22,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,15 +31,25 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuthController {
 
+    private static final int LOGIN_MAX_ATTEMPTS = 5;
+    private static final Duration LOGIN_WINDOW = Duration.ofMinutes(15);
+    private static final int REGISTER_MAX_ATTEMPTS = 3;
+    private static final Duration REGISTER_WINDOW = Duration.ofHours(1);
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
-    private final LoginRateLimiterService loginRateLimiterService;
+    private final RateLimiterService rateLimiterService;
     private final LoginAuditRepository loginAuditRepository;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
+        String key = "register:" + clientIp(httpRequest);
+        rateLimiterService.checkAllowed(key, REGISTER_MAX_ATTEMPTS, REGISTER_WINDOW,
+                "Muitas contas criadas a partir deste endereço. Tente novamente mais tarde.");
+        rateLimiterService.recordAttempt(key, REGISTER_WINDOW);
+
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Email já cadastrado");
         }
@@ -57,14 +68,16 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         String ip = clientIp(httpRequest);
         String userAgent = httpRequest.getHeader("User-Agent");
-        loginRateLimiterService.checkAllowed(ip);
+        String key = "login:" + ip;
+        rateLimiterService.checkAllowed(key, LOGIN_MAX_ATTEMPTS, LOGIN_WINDOW,
+                "Muitas tentativas de login. Tente novamente em alguns minutos.");
 
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
         } catch (BadCredentialsException e) {
-            loginRateLimiterService.recordFailure(ip);
+            rateLimiterService.recordAttempt(key, LOGIN_WINDOW);
             recordAudit(request.getEmail(), ip, userAgent, false);
             throw e;
         }
@@ -72,7 +85,7 @@ public class AuthController {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas"));
 
-        loginRateLimiterService.recordSuccess(ip);
+        rateLimiterService.reset(key);
         recordAudit(request.getEmail(), ip, userAgent, true);
         String token = jwtService.generateToken(user);
         return ResponseEntity.ok(new AuthResponse(token, user.getName(), user.getEmail()));
