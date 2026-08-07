@@ -25,3 +25,6 @@ Thumbs.db
 
 # Backups do banco (dados sensíveis, não versionar)
 backups/
+
+# Ferramentas externas baixadas (binários, não versionar)
+tools/
