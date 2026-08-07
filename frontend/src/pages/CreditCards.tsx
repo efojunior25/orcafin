@@ -13,6 +13,7 @@ export default function CreditCards() {
   const [editing, setEditing] = useState<CreditCard | null>(null);
   const [name, setName] = useState('');
   const [creditLimit, setCreditLimit] = useState(0);
+  const [creditLimitText, setCreditLimitText] = useState('');
   const [closingDay, setClosingDay] = useState(1);
   const [dueDay, setDueDay] = useState(10);
   const [saving, setSaving] = useState(false);
@@ -38,6 +39,7 @@ export default function CreditCards() {
     setEditing(null);
     setName('');
     setCreditLimit(0);
+    setCreditLimitText('');
     setClosingDay(1);
     setDueDay(10);
     setModalOpen(true);
@@ -47,6 +49,7 @@ export default function CreditCards() {
     setEditing(card);
     setName(card.name);
     setCreditLimit(card.creditLimit);
+    setCreditLimitText(card.creditLimit ? String(card.creditLimit).replace('.', ',') : '');
     setClosingDay(card.closingDay);
     setDueDay(card.dueDay);
     setModalOpen(true);
@@ -136,8 +139,11 @@ export default function CreditCards() {
                 type="text"
                 inputMode="decimal"
                 placeholder="0,00"
-                value={creditLimit || ''}
-                onChange={(e) => setCreditLimit(parseDecimal(e.target.value))}
+                value={creditLimitText}
+                onChange={(e) => {
+                  setCreditLimitText(e.target.value);
+                  setCreditLimit(parseDecimal(e.target.value));
+                }}
               />
             </div>
             <div className="form-row">

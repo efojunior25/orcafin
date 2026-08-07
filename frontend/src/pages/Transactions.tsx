@@ -52,6 +52,7 @@ export default function Transactions() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [form, setForm] = useState<TransactionInput>(emptyForm([], []));
+  const [amountText, setAmountText] = useState('');
   const [saving, setSaving] = useState(false);
 
   const [aiText, setAiText] = useState('');
@@ -98,9 +99,14 @@ export default function Transactions() {
     [categories, form.type]
   );
 
+  function formatAmountForInput(value: number): string {
+    return value ? String(value).replace('.', ',') : '';
+  }
+
   function openCreate() {
     setEditing(null);
     setForm(emptyForm(accounts, categories));
+    setAmountText('');
     setModalOpen(true);
   }
 
@@ -121,6 +127,7 @@ export default function Transactions() {
       recurrenceFrequency: null,
       recurrenceEndDate: null,
     });
+    setAmountText(formatAmountForInput(parsed.amount));
     setModalOpen(true);
   }
 
@@ -197,6 +204,7 @@ export default function Transactions() {
       recurrenceFrequency: tx.recurrenceFrequency,
       recurrenceEndDate: tx.recurrenceEndDate,
     });
+    setAmountText(formatAmountForInput(tx.amount));
     setModalOpen(true);
   }
 
@@ -449,8 +457,11 @@ export default function Transactions() {
                   type="text"
                   inputMode="decimal"
                   placeholder="0,00"
-                  value={form.amount || ''}
-                  onChange={(e) => setForm((f) => ({ ...f, amount: parseDecimal(e.target.value) }))}
+                  value={amountText}
+                  onChange={(e) => {
+                    setAmountText(e.target.value);
+                    setForm((f) => ({ ...f, amount: parseDecimal(e.target.value) }));
+                  }}
                 />
               </div>
               <div className="form-field">

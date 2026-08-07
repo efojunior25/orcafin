@@ -17,6 +17,7 @@ export default function Budgets() {
   const [editing, setEditing] = useState<Budget | null>(null);
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [limitAmount, setLimitAmount] = useState(0);
+  const [limitAmountText, setLimitAmountText] = useState('');
   const [saving, setSaving] = useState(false);
 
   async function load() {
@@ -48,6 +49,7 @@ export default function Budgets() {
     setEditing(null);
     setCategoryId(null);
     setLimitAmount(0);
+    setLimitAmountText('');
     setModalOpen(true);
   }
 
@@ -55,6 +57,7 @@ export default function Budgets() {
     setEditing(budget);
     setCategoryId(budget.categoryId);
     setLimitAmount(budget.limitAmount);
+    setLimitAmountText(budget.limitAmount ? String(budget.limitAmount).replace('.', ',') : '');
     setModalOpen(true);
   }
 
@@ -165,8 +168,11 @@ export default function Budgets() {
                 type="text"
                 inputMode="decimal"
                 placeholder="0,00"
-                value={limitAmount || ''}
-                onChange={(e) => setLimitAmount(parseDecimal(e.target.value))}
+                value={limitAmountText}
+                onChange={(e) => {
+                  setLimitAmountText(e.target.value);
+                  setLimitAmount(parseDecimal(e.target.value));
+                }}
               />
             </div>
             <div className="modal-actions">
