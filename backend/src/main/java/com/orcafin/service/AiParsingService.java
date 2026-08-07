@@ -36,6 +36,10 @@ public class AiParsingService {
     private String ollamaModel;
 
     public ParseTransactionResponse parse(User user, String text) {
+        return parse(user, text, null);
+    }
+
+    public ParseTransactionResponse parse(User user, String text, String transcribedText) {
         List<Category> categories = categoryRepository.findByUserIdOrUserIdIsNull(user.getId());
 
         String prompt = buildPrompt(text, categories);
@@ -55,7 +59,8 @@ public class AiParsingService {
                 description.isBlank() ? text : description,
                 matched != null ? matched.getId() : null,
                 matched != null ? matched.getName() : null,
-                LocalDate.now()
+                LocalDate.now(),
+                transcribedText
         );
     }
 

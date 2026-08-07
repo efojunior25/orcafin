@@ -12,6 +12,10 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  servlet:
+    multipart:
+      max-file-size: 15MB
+      max-request-size: 15MB
 server:
   port: ${SERVER_PORT:8080}
 app:
@@ -21,3 +25,5 @@ app:
   ollama:
     base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
     model: ${OLLAMA_MODEL:llama3.2:1b}
+  whisper:
+    base-url: ${WHISPER_BASE_URL:http://localhost:9000}

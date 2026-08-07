@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as transactionsApi from '../api/transactions';
 import type { Transaction, TransactionInput, TransactionType, PaymentMethod, RecurrenceFrequency, TransactionGroup } from '../api/transactions';
 import * as accountsApi from '../api/accounts';
@@ -8,7 +8,7 @@ import type { CreditCard } from '../api/creditCards';
 import * as categoriesApi from '../api/categories';
 import type { Category } from '../api/categories';
 import * as aiApi from '../api/ai';
-import { formatCurrency, formatDate, monthRange, todayISO, paymentMethodLabels, recurrenceFrequencyLabels, transactionGroupLabels } from '../utils/format';
+import { formatCurrency, formatDate, monthRange, todayISO, paymentMethodLabels, recurrenceFrequencyLabels, transactionGroupLabels, parseDecimal } from '../utils/format';
 import { getErrorMessage } from '../utils/errors';
 import './Accounts.css';
 import './Transactions.css';
@@ -56,6 +56,10 @@ export default function Transactions() {
 
   const [aiText, setAiText] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [lastTranscription, setLastTranscription] = useState('');
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   async function loadAll() {
     setLoading(true);
@@ -100,35 +104,80 @@ export default function Transactions() {
     setModalOpen(true);
   }
 
+  function applyParsedResult(parsed: aiApi.ParsedTransaction) {
+    setEditing(null);
+    setForm({
+      accountId: accounts[0]?.id ?? null,
+      creditCardId: null,
+      categoryId: parsed.categoryId,
+      destinationAccountId: null,
+      type: parsed.type,
+      group: null,
+      amount: parsed.amount,
+      description: parsed.description,
+      date: parsed.date,
+      paymentMethod: 'DEBITO',
+      isRecurring: false,
+      recurrenceFrequency: null,
+      recurrenceEndDate: null,
+    });
+    setModalOpen(true);
+  }
+
   async function handleAiParse() {
     if (!aiText.trim() || accounts.length === 0) return;
     setAiLoading(true);
     setError('');
     try {
       const parsed = await aiApi.parseTransactionText(aiText.trim());
-      setEditing(null);
-      setForm({
-        accountId: accounts[0]?.id ?? null,
-        creditCardId: null,
-        categoryId: parsed.categoryId,
-        destinationAccountId: null,
-        type: parsed.type,
-        group: null,
-        amount: parsed.amount,
-        description: parsed.description,
-        date: parsed.date,
-        paymentMethod: 'DEBITO',
-        isRecurring: false,
-        recurrenceFrequency: null,
-        recurrenceEndDate: null,
-      });
+      applyParsedResult(parsed);
       setAiText('');
-      setModalOpen(true);
     } catch (err) {
       setError(getErrorMessage(err, 'Não foi possível interpretar o texto com a IA local.'));
     } finally {
       setAiLoading(false);
     }
+  }
+
+  async function startRecording() {
+    if (accounts.length === 0) return;
+    setError('');
+    setLastTranscription('');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop());
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        setAiLoading(true);
+        try {
+          const parsed = await aiApi.parseTransactionAudio(audioBlob);
+          setLastTranscription(parsed.transcribedText ?? '');
+          applyParsedResult(parsed);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Não foi possível transcrever o áudio.');
+        } finally {
+          setAiLoading(false);
+        }
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setIsRecording(true);
+    } catch {
+      setError('Não foi possível acessar o microfone. Verifique as permissões do navegador.');
+    }
+  }
+
+  function stopRecording() {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
   }
 
   function openEdit(tx: Transaction) {
@@ -261,9 +310,20 @@ export default function Transactions() {
           >
             {aiLoading ? 'Interpretando...' : 'Interpretar'}
           </button>
+          <button
+            className={`btn ${isRecording ? 'btn-danger' : 'btn-secondary'}`}
+            onClick={isRecording ? stopRecording : startRecording}
+            disabled={aiLoading || accounts.length === 0}
+            title={isRecording ? 'Parar gravação' : 'Gravar áudio'}
+          >
+            {isRecording ? '⏹ Parar' : '🎤'}
+          </button>
         </div>
+        {lastTranscription && (
+          <div className="ai-quick-entry-hint">Você disse: "{lastTranscription}"</div>
+        )}
         <div className="ai-quick-entry-hint">
-          Digite algo como "Pizza 59,90" e revise antes de salvar. Requer o container Ollama rodando.
+          Digite ou grave algo como "Pizza 59,90" e revise antes de salvar. Requer os containers Ollama/Whisper rodando.
         </div>
       </div>
 
@@ -386,11 +446,11 @@ export default function Transactions() {
               <div className="form-field">
                 <label>Valor</label>
                 <input
-                  type="number"
-                  min="0"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0,00"
                   value={form.amount || ''}
-                  onChange={(e) => setForm((f) => ({ ...f, amount: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => setForm((f) => ({ ...f, amount: parseDecimal(e.target.value) }))}
                 />
               </div>
               <div className="form-field">

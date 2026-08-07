@@ -8,11 +8,13 @@ import com.orcafin.entity.User;
 import com.orcafin.security.SecurityUtils;
 import com.orcafin.service.AiParsingService;
 import com.orcafin.service.TransactionService;
+import com.orcafin.service.WhisperService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -25,6 +27,7 @@ public class TransactionController {
 
     private final TransactionService transactionService;
     private final AiParsingService aiParsingService;
+    private final WhisperService whisperService;
 
     @GetMapping
     public ResponseEntity<List<TransactionResponse>> list(
@@ -57,5 +60,12 @@ public class TransactionController {
     public ResponseEntity<ParseTransactionResponse> parse(@Valid @RequestBody ParseTransactionRequest request) {
         User user = SecurityUtils.getCurrentUser();
         return ResponseEntity.ok(aiParsingService.parse(user, request.getText()));
+    }
+
+    @PostMapping(value = "/parse-audio", consumes = "multipart/form-data")
+    public ResponseEntity<ParseTransactionResponse> parseAudio(@RequestParam("audio") MultipartFile audio) {
+        User user = SecurityUtils.getCurrentUser();
+        String transcribedText = whisperService.transcribe(audio);
+        return ResponseEntity.ok(aiParsingService.parse(user, transcribedText, transcribedText));
     }
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import * as creditCardsApi from '../api/creditCards';
 import type { CreditCard } from '../api/creditCards';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, parseDecimal } from '../utils/format';
 import { getErrorMessage } from '../utils/errors';
 import './Accounts.css';
 
@@ -133,11 +133,11 @@ export default function CreditCards() {
               <label htmlFor="cc-limit">Limite</label>
               <input
                 id="cc-limit"
-                type="number"
-                min="0"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
+                placeholder="0,00"
                 value={creditLimit || ''}
-                onChange={(e) => setCreditLimit(parseFloat(e.target.value) || 0)}
+                onChange={(e) => setCreditLimit(parseDecimal(e.target.value))}
               />
             </div>
             <div className="form-row">

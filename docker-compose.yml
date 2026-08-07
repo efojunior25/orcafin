@@ -35,6 +35,7 @@ services:
       SERVER_PORT: 8080
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
+      WHISPER_BASE_URL: http://whisper:9000
     ports:
       - "8080:8080"
 
@@ -67,6 +68,28 @@ services:
               count: all
               capabilities: [gpu]
 
+  # Transcrição de áudio local (Whisper via faster-whisper), mesmo profile "ai".
+  whisper:
+    image: onerahmet/openai-whisper-asr-webservice:latest-gpu
+    container_name: orcafin-whisper
+    restart: "no"
+    profiles: ["ai"]
+    environment:
+      ASR_MODEL: base
+      ASR_ENGINE: faster_whisper
+    volumes:
+      - orcafin-whisper-data:/root/.cache
+    ports:
+      - "9000:9000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
 volumes:
   orcafin-postgres-data:
   orcafin-ollama-data:
+  orcafin-whisper-data:

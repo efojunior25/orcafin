@@ -17,4 +17,5 @@ public class ParseTransactionResponse {
     private UUID categoryId;
     private String categoryName;
     private LocalDate date;
+    private String transcribedText;
 }

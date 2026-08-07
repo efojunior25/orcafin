@@ -2,6 +2,15 @@ export function formatCurrency(value: number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value ?? 0);
 }
 
+// Aceita tanto "85,64" (padrão brasileiro, com ou sem separador de milhar "1.234,56")
+// quanto "85.64" (já vem assim quando pré-preenchido pela IA).
+export function parseDecimal(value: string): number {
+  const trimmed = value.trim();
+  const normalized = trimmed.includes(',') ? trimmed.replace(/\./g, '').replace(',', '.') : trimmed;
+  const parsed = parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 export function formatDate(dateStr: string): string {
   if (!dateStr) return '';
   const [y, m, d] = dateStr.split('-');

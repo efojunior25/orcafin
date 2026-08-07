@@ -3,7 +3,7 @@ import * as budgetsApi from '../api/budgets';
 import type { Budget } from '../api/budgets';
 import * as categoriesApi from '../api/categories';
 import type { Category } from '../api/categories';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, parseDecimal } from '../utils/format';
 import { getErrorMessage } from '../utils/errors';
 import './Accounts.css';
 import './Budgets.css';
@@ -162,11 +162,11 @@ export default function Budgets() {
             <div className="form-field">
               <label>Limite mensal</label>
               <input
-                type="number"
-                min="0"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
+                placeholder="0,00"
                 value={limitAmount || ''}
-                onChange={(e) => setLimitAmount(parseFloat(e.target.value) || 0)}
+                onChange={(e) => setLimitAmount(parseDecimal(e.target.value))}
               />
             </div>
             <div className="modal-actions">
