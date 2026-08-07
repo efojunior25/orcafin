@@ -15,7 +15,7 @@ export default function Budgets() {
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Budget | null>(null);
-  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [categoryId, setCategoryId] = useState<string | null>(null);
   const [limitAmount, setLimitAmount] = useState(0);
   const [limitAmountText, setLimitAmountText] = useState('');
   const [saving, setSaving] = useState(false);
@@ -151,7 +151,7 @@ export default function Budgets() {
               <label>Categoria</label>
               <select
                 value={categoryId ?? ''}
-                onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : null)}
+                onChange={(e) => setCategoryId(e.target.value ? e.target.value : null)}
                 disabled={!!editing}
               >
                 {!generalTaken && <option value="">Geral (todas as despesas)</option>}

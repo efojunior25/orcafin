@@ -1,8 +1,8 @@
 import api from './client';
 
 export interface Budget {
-  id: number;
-  categoryId: number | null;
+  id: string;
+  categoryId: string | null;
   categoryName: string;
   limitAmount: number;
   spentAmount: number;
@@ -10,7 +10,7 @@ export interface Budget {
 }
 
 export interface BudgetInput {
-  categoryId: number | null;
+  categoryId: string | null;
   limitAmount: number;
 }
 
@@ -24,11 +24,11 @@ export async function createBudget(input: BudgetInput): Promise<Budget> {
   return data;
 }
 
-export async function updateBudget(id: number, input: BudgetInput): Promise<Budget> {
+export async function updateBudget(id: string, input: BudgetInput): Promise<Budget> {
   const { data } = await api.put<Budget>(`/api/budgets/${id}`, input);
   return data;
 }
 
-export async function deleteBudget(id: number): Promise<void> {
+export async function deleteBudget(id: string): Promise<void> {
   await api.delete(`/api/budgets/${id}`);
 }

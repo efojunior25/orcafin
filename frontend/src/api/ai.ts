@@ -5,7 +5,7 @@ export interface ParsedTransaction {
   type: TransactionType;
   amount: number;
   description: string;
-  categoryId: number | null;
+  categoryId: string | null;
   categoryName: string | null;
   date: string;
   transcribedText: string | null;

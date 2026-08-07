@@ -3,7 +3,7 @@ import api from './client';
 export type AccountType = 'CORRENTE' | 'POUPANCA' | 'CARTEIRA';
 
 export interface Account {
-  id: number;
+  id: string;
   name: string;
   type: AccountType;
   balance: number;
@@ -24,11 +24,11 @@ export async function createAccount(input: AccountInput): Promise<Account> {
   return data;
 }
 
-export async function updateAccount(id: number, input: AccountInput): Promise<Account> {
+export async function updateAccount(id: string, input: AccountInput): Promise<Account> {
   const { data } = await api.put<Account>(`/api/accounts/${id}`, input);
   return data;
 }
 
-export async function deleteAccount(id: number): Promise<void> {
+export async function deleteAccount(id: string): Promise<void> {
   await api.delete(`/api/accounts/${id}`);
 }

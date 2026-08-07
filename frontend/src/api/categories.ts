@@ -3,7 +3,7 @@ import api from './client';
 export type CategoryType = 'RECEITA' | 'DESPESA';
 
 export interface Category {
-  id: number;
+  id: string;
   name: string;
   icon: string;
   type: CategoryType;
@@ -26,6 +26,6 @@ export async function createCategory(input: CategoryInput): Promise<Category> {
   return data;
 }
 
-export async function deleteCategory(id: number): Promise<void> {
+export async function deleteCategory(id: string): Promise<void> {
   await api.delete(`/api/categories/${id}`);
 }

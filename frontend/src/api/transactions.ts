@@ -6,14 +6,14 @@ export type RecurrenceFrequency = 'DIARIA' | 'SEMANAL' | 'MENSAL' | 'ANUAL';
 export type TransactionGroup = 'ASSINATURAS' | 'CONTAS_FIXAS_CASA' | 'COMPRAS_PONTUAIS' | 'DIVIDAS_PARCELAS' | 'OUTROS';
 
 export interface Transaction {
-  id: number;
-  accountId: number | null;
+  id: string;
+  accountId: string | null;
   accountName: string | null;
-  creditCardId: number | null;
+  creditCardId: string | null;
   creditCardName: string | null;
-  categoryId: number | null;
+  categoryId: string | null;
   categoryName: string | null;
-  destinationAccountId: number | null;
+  destinationAccountId: string | null;
   destinationAccountName: string | null;
   type: TransactionType;
   group: TransactionGroup | null;
@@ -27,10 +27,10 @@ export interface Transaction {
 }
 
 export interface TransactionInput {
-  accountId: number | null;
-  creditCardId: number | null;
-  categoryId: number | null;
-  destinationAccountId: number | null;
+  accountId: string | null;
+  creditCardId: string | null;
+  categoryId: string | null;
+  destinationAccountId: string | null;
   type: TransactionType;
   group: TransactionGroup | null;
   amount: number;
@@ -55,11 +55,11 @@ export async function createTransaction(input: TransactionInput): Promise<Transa
   return data;
 }
 
-export async function updateTransaction(id: number, input: TransactionInput): Promise<Transaction> {
+export async function updateTransaction(id: string, input: TransactionInput): Promise<Transaction> {
   const { data } = await api.put<Transaction>(`/api/transactions/${id}`, input);
   return data;
 }
 
-export async function deleteTransaction(id: number): Promise<void> {
+export async function deleteTransaction(id: string): Promise<void> {
   await api.delete(`/api/transactions/${id}`);
 }

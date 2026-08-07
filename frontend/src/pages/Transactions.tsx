@@ -20,9 +20,9 @@ const transactionGroups: TransactionGroup[] = ['ASSINATURAS', 'CONTAS_FIXAS_CASA
 function emptyForm(accounts: Account[], categories: Category[]): TransactionInput {
   const despesaCategories = categories.filter((c) => c.type === 'DESPESA');
   return {
-    accountId: accounts[0]?.id ?? 0,
+    accountId: accounts[0]?.id ?? null,
     creditCardId: null,
-    categoryId: despesaCategories[0]?.id ?? 0,
+    categoryId: despesaCategories[0]?.id ?? null,
     destinationAccountId: null,
     type: 'DESPESA',
     group: null,
@@ -223,13 +223,13 @@ export default function Transactions() {
       return;
     }
     const firstCat = categories.find((c) => c.type === type);
-    const accountId = type === 'RECEITA' ? form.accountId ?? accounts[0]?.id ?? 0 : form.accountId;
+    const accountId = type === 'RECEITA' ? form.accountId ?? accounts[0]?.id ?? null : form.accountId;
     setForm((f) => ({
       ...f,
       type,
       accountId: type === 'RECEITA' ? accountId : f.accountId,
       creditCardId: type === 'RECEITA' ? null : f.creditCardId,
-      categoryId: firstCat?.id ?? 0,
+      categoryId: firstCat?.id ?? null,
       destinationAccountId: null,
     }));
   }
@@ -505,7 +505,7 @@ export default function Transactions() {
                   <label>Cartão</label>
                   <select
                     value={form.creditCardId}
-                    onChange={(e) => setForm((f) => ({ ...f, creditCardId: Number(e.target.value) }))}
+                    onChange={(e) => setForm((f) => ({ ...f, creditCardId: e.target.value }))}
                   >
                     {creditCards.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -520,7 +520,7 @@ export default function Transactions() {
                   <select
                     value={form.accountId ?? ''}
                     onChange={(e) => {
-                      const accountId = Number(e.target.value);
+                      const accountId = e.target.value;
                       setForm((f) => ({
                         ...f,
                         accountId,
@@ -544,7 +544,7 @@ export default function Transactions() {
                   <label>Conta de destino</label>
                   <select
                     value={form.destinationAccountId ?? ''}
-                    onChange={(e) => setForm((f) => ({ ...f, destinationAccountId: Number(e.target.value) }))}
+                    onChange={(e) => setForm((f) => ({ ...f, destinationAccountId: e.target.value }))}
                   >
                     <option value="" disabled>
                       Selecione...
@@ -563,7 +563,7 @@ export default function Transactions() {
                   <label>Categoria</label>
                   <select
                     value={form.categoryId ?? ''}
-                    onChange={(e) => setForm((f) => ({ ...f, categoryId: Number(e.target.value) }))}
+                    onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
                   >
                     {categoriesForType.map((c) => (
                       <option key={c.id} value={c.id}>

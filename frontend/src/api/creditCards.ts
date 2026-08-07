@@ -1,7 +1,7 @@
 import api from './client';
 
 export interface CreditCard {
-  id: number;
+  id: string;
   name: string;
   creditLimit: number;
   closingDay: number;
@@ -26,11 +26,11 @@ export async function createCreditCard(input: CreditCardInput): Promise<CreditCa
   return data;
 }
 
-export async function updateCreditCard(id: number, input: CreditCardInput): Promise<CreditCard> {
+export async function updateCreditCard(id: string, input: CreditCardInput): Promise<CreditCard> {
   const { data } = await api.put<CreditCard>(`/api/credit-cards/${id}`, input);
   return data;
 }
 
-export async function deleteCreditCard(id: number): Promise<void> {
+export async function deleteCreditCard(id: string): Promise<void> {
   await api.delete(`/api/credit-cards/${id}`);
 }
