@@ -6,9 +6,9 @@ services:
     environment:
       POSTGRES_DB: orcafin
       POSTGRES_USER: orcafin
-      POSTGRES_PASSWORD: orcafin
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - orcafin-postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -30,8 +30,8 @@ services:
       DB_PORT: 5432
       DB_NAME: orcafin
       DB_USER: orcafin
-      DB_PASSWORD: orcafin
-      JWT_SECRET: ${JWT_SECRET:-troque-este-segredo-por-uma-string-base64-longa-e-aleatoria-em-producao}
+      DB_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET no .env}
       SERVER_PORT: 8080
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
@@ -41,7 +41,7 @@ services:
       MAIL_FROM_NAME: ${MAIL_FROM_NAME:-OrçaFin Suporte}
       APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://localhost:5173}
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
 
   frontend:
     build:
@@ -51,19 +51,19 @@ services:
     depends_on:
       - backend
     ports:
-      - "5173:80"
+      - "5173:8080"
 
   # Opcional: só sobe quando pedido explicitamente (profile "ai"), pra não consumir
   # RAM à toa numa máquina com 8GB. Ver README para como usar.
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama@sha256:b88c73ace3e115f8ec53dc8761ae1c0aabfa675406e3681786b98757ce050f42
     container_name: orcafin-ollama
     restart: "no"
     profiles: ["ai"]
     volumes:
       - orcafin-ollama-data:/root/.ollama
     ports:
-      - "11434:11434"
+      - "127.0.0.1:11434:11434"
     deploy:
       resources:
         reservations:
@@ -74,7 +74,7 @@ services:
 
   # Transcrição de áudio local (Whisper via faster-whisper), mesmo profile "ai".
   whisper:
-    image: onerahmet/openai-whisper-asr-webservice:latest-gpu
+    image: onerahmet/openai-whisper-asr-webservice@sha256:1132aa08c6eb9b440408864e8c25733d22a197ffea7c6975d60a4f4b6fd7b08b
     container_name: orcafin-whisper
     restart: "no"
     profiles: ["ai"]
@@ -84,7 +84,7 @@ services:
     volumes:
       - orcafin-whisper-data:/root/.cache
     ports:
-      - "9000:9000"
+      - "127.0.0.1:9000:9000"
     deploy:
       resources:
         reservations:

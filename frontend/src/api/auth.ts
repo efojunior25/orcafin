@@ -1,7 +1,6 @@
 import api from './client';
 
 export interface AuthResponse {
-  token: string;
   name: string;
   email: string;
 }
@@ -13,6 +12,15 @@ export async function login(email: string, password: string): Promise<AuthRespon
 
 export async function register(name: string, email: string, password: string): Promise<AuthResponse> {
   const { data } = await api.post<AuthResponse>('/api/auth/register', { name, email, password });
+  return data;
+}
+
+export async function logout(): Promise<void> {
+  await api.post('/api/auth/logout');
+}
+
+export async function me(): Promise<AuthResponse> {
+  const { data } = await api.get<AuthResponse>('/api/auth/me');
   return data;
 }
 

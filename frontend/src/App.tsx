@@ -1,19 +1,21 @@
+import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import Transactions from './pages/Transactions';
-import Accounts from './pages/Accounts';
-import Categories from './pages/Categories';
-import CreditCards from './pages/CreditCards';
-import Budgets from './pages/Budgets';
-import LoginHistory from './pages/LoginHistory';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
+
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Transactions = lazy(() => import('./pages/Transactions'));
+const Accounts = lazy(() => import('./pages/Accounts'));
+const Categories = lazy(() => import('./pages/Categories'));
+const CreditCards = lazy(() => import('./pages/CreditCards'));
+const Budgets = lazy(() => import('./pages/Budgets'));
+const LoginHistory = lazy(() => import('./pages/LoginHistory'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -23,11 +25,16 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
+function PageFallback() {
+  return <div style={{ padding: 24 }}>Carregando...</div>;
+}
+
 function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
+          <Suspense fallback={<PageFallback />}>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -90,6 +97,7 @@ function App() {
               }
             />
           </Routes>
+          </Suspense>
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>

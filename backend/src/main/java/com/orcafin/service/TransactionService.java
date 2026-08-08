@@ -15,6 +15,7 @@ import com.orcafin.repository.CategoryRepository;
 import com.orcafin.repository.CreditCardRepository;
 import com.orcafin.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,12 +34,18 @@ public class TransactionService {
     private final CategoryRepository categoryRepository;
     private final CreditCardRepository creditCardRepository;
 
+    // Sem filtro de data, o app pode acumular anos de histórico; limita pra evitar
+    // consultas/payloads gigantes num único request (o histórico é sempre navegado
+    // por mês na UI, então isso só afeta chamadas diretas à API sem from/to).
+    private static final int MAX_UNFILTERED_RESULTS = 1000;
+
     public List<TransactionResponse> listTransactions(User user, LocalDate from, LocalDate to) {
         List<Transaction> transactions;
         if (from != null && to != null) {
             transactions = transactionRepository.findByUserIdAndDateBetween(user.getId(), from, to);
         } else {
-            transactions = transactionRepository.findByUserIdOrderByDateDesc(user.getId());
+            transactions = transactionRepository.findByUserIdOrderByDateDesc(
+                    user.getId(), PageRequest.of(0, MAX_UNFILTERED_RESULTS));
         }
         return transactions.stream()
                 .map(TransactionResponse::new)

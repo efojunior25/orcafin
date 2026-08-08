@@ -20,10 +20,9 @@ export async function parseTransactionAudio(audioBlob: Blob): Promise<ParsedTran
   const formData = new FormData();
   formData.append('audio', audioBlob, 'audio.webm');
 
-  const token = localStorage.getItem('orcafin_token');
   const response = await fetch('/api/transactions/parse-audio', {
     method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    credentials: 'include',
     body: formData,
   });
 

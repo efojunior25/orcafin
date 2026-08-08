@@ -9,6 +9,7 @@ import com.orcafin.exception.AiUnavailableException;
 import com.orcafin.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -16,6 +17,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
@@ -25,6 +27,15 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class AiParsingService {
+
+    private static final SimpleClientHttpRequestFactory REQUEST_FACTORY = buildRequestFactory();
+
+    private static SimpleClientHttpRequestFactory buildRequestFactory() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofSeconds(5));
+        factory.setReadTimeout(Duration.ofSeconds(30));
+        return factory;
+    }
 
     private final CategoryRepository categoryRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -103,7 +114,10 @@ public class AiParsingService {
 
     private String callOllama(String prompt) {
         try {
-            RestClient client = RestClient.create(ollamaBaseUrl);
+            RestClient client = RestClient.builder()
+                    .baseUrl(ollamaBaseUrl)
+                    .requestFactory(REQUEST_FACTORY)
+                    .build();
             Map<String, Object> body = Map.of(
                     "model", ollamaModel,
                     "prompt", prompt,

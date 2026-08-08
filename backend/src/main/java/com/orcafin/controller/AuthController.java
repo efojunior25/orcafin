@@ -20,6 +20,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -56,6 +58,31 @@ public class AuthController {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
 
+    private static final String COOKIE_NAME = "orcafin_token";
+
+    @org.springframework.beans.factory.annotation.Value("${app.jwt.expiration-ms}")
+    private long jwtExpirationMs;
+
+    private ResponseCookie buildAuthCookie(String token) {
+        return ResponseCookie.from(COOKIE_NAME, token)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Lax")
+                .path("/")
+                .maxAge(Duration.ofMillis(jwtExpirationMs))
+                .build();
+    }
+
+    private ResponseCookie buildLogoutCookie() {
+        return ResponseCookie.from(COOKIE_NAME, "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Lax")
+                .path("/")
+                .maxAge(0)
+                .build();
+    }
+
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
         String key = "register:" + clientIp(httpRequest);
@@ -76,7 +103,9 @@ public class AuthController {
         emailService.sendWelcomeEmail(user.getEmail(), user.getName());
 
         String token = jwtService.generateToken(user);
-        return ResponseEntity.ok(new AuthResponse(token, user.getName(), user.getEmail()));
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, buildAuthCookie(token).toString())
+                .body(new AuthResponse(user.getName(), user.getEmail()));
     }
 
     @PostMapping("/forgot-password")
@@ -110,6 +139,7 @@ public class AuthController {
 
         User user = resetToken.getUser();
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        user.setPasswordChangedAt(Instant.now());
         userRepository.save(user);
 
         resetToken.setUsed(true);
@@ -123,8 +153,11 @@ public class AuthController {
         String ip = clientIp(httpRequest);
         String userAgent = httpRequest.getHeader("User-Agent");
         String key = "login:" + ip;
+        String accountKey = "login-account:" + request.getEmail().trim().toLowerCase();
         rateLimiterService.checkAllowed(key, LOGIN_MAX_ATTEMPTS, LOGIN_WINDOW,
                 "Muitas tentativas de login. Tente novamente em alguns minutos.");
+        rateLimiterService.checkAllowed(accountKey, LOGIN_MAX_ATTEMPTS, LOGIN_WINDOW,
+                "Muitas tentativas de login para esta conta. Tente novamente em alguns minutos.");
 
         try {
             authenticationManager.authenticate(
@@ -132,6 +165,7 @@ public class AuthController {
             );
         } catch (BadCredentialsException e) {
             rateLimiterService.recordAttempt(key, LOGIN_WINDOW);
+            rateLimiterService.recordAttempt(accountKey, LOGIN_WINDOW);
             recordAudit(request.getEmail(), ip, userAgent, false);
             throw e;
         }
@@ -140,9 +174,25 @@ public class AuthController {
                 .orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas"));
 
         rateLimiterService.reset(key);
+        rateLimiterService.reset(accountKey);
         recordAudit(request.getEmail(), ip, userAgent, true);
         String token = jwtService.generateToken(user);
-        return ResponseEntity.ok(new AuthResponse(token, user.getName(), user.getEmail()));
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, buildAuthCookie(token).toString())
+                .body(new AuthResponse(user.getName(), user.getEmail()));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, buildLogoutCookie().toString())
+                .build();
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<AuthResponse> me() {
+        User user = SecurityUtils.getCurrentUser();
+        return ResponseEntity.ok(new AuthResponse(user.getName(), user.getEmail()));
     }
 
     @GetMapping("/login-history")

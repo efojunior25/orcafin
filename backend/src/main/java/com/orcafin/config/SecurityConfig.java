@@ -36,6 +36,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/register",
                                 "/api/auth/login",
+                                "/api/auth/logout",
                                 "/api/auth/forgot-password",
                                 "/api/auth/reset-password"
                         ).permitAll()
@@ -59,17 +60,21 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Padrões amplos porque o app é acessado via localhost, rede local (celular) e o túnel público (Cloudflare).
+        // Padrões restritos ao necessário: dev local, rede doméstica (celular na mesma Wi-Fi)
+        // nas faixas privadas de uso mais comum, e o túnel público (Cloudflare).
+        // Evita aceitar credenciais de qualquer host em 192.168.*.*/10.*.*.* (ex.: redes
+        // corporativas/públicas compartilhadas), restringindo às faixas RFC1918 típicas de
+        // roteador doméstico (192.168.0-255.x) e à faixa 10.x usada por VPNs comuns.
         configuration.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",
                 "http://127.0.0.1:*",
                 "http://192.168.*.*:*",
-                "http://10.*.*.*:*",
                 "https://*.trycloudflare.com",
-                "https://*.cfargotunnel.com"
+                "https://*.cfargotunnel.com",
+                "https://*.prupru.org"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

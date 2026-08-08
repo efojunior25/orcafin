@@ -35,6 +35,9 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private Instant createdAt = Instant.now();
 
+    @Column(nullable = false)
+    private Instant passwordChangedAt = Instant.now();
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return AuthorityUtils.NO_AUTHORITIES;

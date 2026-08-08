@@ -51,7 +51,7 @@ public class EmailService {
 
     private void send(String toEmail, String subject, String html) {
         if (fromEmail == null || fromEmail.isBlank()) {
-            log.warn("MAIL_USERNAME não configurado — email para {} não foi enviado (assunto: {})", toEmail, subject);
+            log.warn("MAIL_USERNAME não configurado — email para {} não foi enviado (assunto: {})", mask(toEmail), subject);
             return;
         }
         try {
@@ -63,7 +63,14 @@ public class EmailService {
             helper.setText(html, true);
             mailSender.send(message);
         } catch (MailException | java.io.UnsupportedEncodingException | jakarta.mail.MessagingException e) {
-            log.error("Falha ao enviar email para {}: {}", toEmail, e.getMessage());
+            log.error("Falha ao enviar email para {}: {}", mask(toEmail), e.getMessage());
         }
+    }
+
+    private String mask(String email) {
+        if (email == null) return "?";
+        int at = email.indexOf('@');
+        if (at <= 1) return "***" + email.substring(Math.max(at, 0));
+        return email.charAt(0) + "***" + email.substring(at);
     }
 }
