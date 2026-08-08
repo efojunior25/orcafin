@@ -54,12 +54,14 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Padrões amplos porque o app é acessado tanto via localhost quanto pelo IP da rede local (celular, etc).
+        // Padrões amplos porque o app é acessado via localhost, rede local (celular) e o túnel público (Cloudflare).
         configuration.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",
                 "http://127.0.0.1:*",
                 "http://192.168.*.*:*",
-                "http://10.*.*.*:*"
+                "http://10.*.*.*:*",
+                "https://*.trycloudflare.com",
+                "https://*.cfargotunnel.com"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));

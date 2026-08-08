@@ -31,10 +31,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private static final int LOGIN_MAX_ATTEMPTS = 5;
-    private static final Duration LOGIN_WINDOW = Duration.ofMinutes(15);
-    private static final int REGISTER_MAX_ATTEMPTS = 3;
-    private static final Duration REGISTER_WINDOW = Duration.ofHours(1);
+    private static final int LOGIN_MAX_ATTEMPTS = 10;
+    private static final Duration LOGIN_WINDOW = Duration.ofMinutes(5);
+    private static final int REGISTER_MAX_ATTEMPTS = 10;
+    private static final Duration REGISTER_WINDOW = Duration.ofMinutes(5);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -112,6 +112,11 @@ public class AuthController {
     }
 
     private String clientIp(HttpServletRequest request) {
+        // Cloudflare sempre manda o IP real do visitante aqui, mesmo atravessando o túnel.
+        String cfConnectingIp = request.getHeader("CF-Connecting-IP");
+        if (cfConnectingIp != null && !cfConnectingIp.isBlank()) {
+            return cfConnectingIp.trim();
+        }
         String forwardedFor = request.getHeader("X-Forwarded-For");
         if (forwardedFor != null && !forwardedFor.isBlank()) {
             return forwardedFor.split(",")[0].trim();
