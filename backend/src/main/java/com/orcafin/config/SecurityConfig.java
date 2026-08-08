@@ -1,5 +1,6 @@
 package com.orcafin.config;
 
+import com.orcafin.security.InternalApiKeyFilter;
 import com.orcafin.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +26,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final InternalApiKeyFilter internalApiKeyFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -40,8 +42,12 @@ public class SecurityConfig {
                                 "/api/auth/forgot-password",
                                 "/api/auth/reset-password"
                         ).permitAll()
+                        // Autorização real feita pelo InternalApiKeyFilter (chave compartilhada),
+                        // não faz sentido exigir login de usuário nessas rotas.
+                        .requestMatchers("/api/internal/**").permitAll()
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(internalApiKeyFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

@@ -33,7 +33,10 @@ public class AiParsingService {
     private static SimpleClientHttpRequestFactory buildRequestFactory() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofSeconds(5));
-        factory.setReadTimeout(Duration.ofSeconds(30));
+        // Generoso de propósito: a primeira chamada depois que o Ollama fica
+        // ocioso precisa recarregar o modelo na memória (lento em CPU), e não
+        // dá pra distinguir isso de uma trava real só pelo timeout.
+        factory.setReadTimeout(Duration.ofSeconds(240));
         return factory;
     }
 

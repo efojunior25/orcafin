@@ -14,6 +14,7 @@ const Categories = lazy(() => import('./pages/Categories'));
 const CreditCards = lazy(() => import('./pages/CreditCards'));
 const Budgets = lazy(() => import('./pages/Budgets'));
 const LoginHistory = lazy(() => import('./pages/LoginHistory'));
+const Profile = lazy(() => import('./pages/Profile'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 
@@ -93,6 +94,14 @@ function App() {
               element={
                 <ProtectedLayout>
                   <LoginHistory />
+                </ProtectedLayout>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedLayout>
+                  <Profile />
                 </ProtectedLayout>
               }
             />

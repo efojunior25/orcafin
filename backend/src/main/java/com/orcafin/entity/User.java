@@ -38,6 +38,11 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private Instant passwordChangedAt = Instant.now();
 
+    @Column(unique = true)
+    private String phoneNumber;
+
+    private UUID defaultAccountId;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return AuthorityUtils.NO_AUTHORITIES;

@@ -3,6 +3,7 @@ package com.orcafin.service;
 import com.orcafin.exception.AiUnavailableException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
@@ -15,7 +16,6 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.time.Duration;
 
 @Service
@@ -43,14 +43,31 @@ public class WhisperService {
         if (audioFile == null || audioFile.isEmpty()) {
             throw new IllegalArgumentException("Nenhum áudio foi enviado.");
         }
-        if (audioFile.getSize() > MAX_AUDIO_BYTES) {
-            throw new IllegalArgumentException("Áudio muito grande (máximo 10MB).");
-        }
         String contentType = audioFile.getContentType();
         if (contentType == null || !contentType.startsWith("audio/")) {
             throw new IllegalArgumentException("Arquivo enviado não é um áudio válido.");
         }
-        if (!hasValidAudioSignature(audioFile)) {
+        byte[] bytes;
+        try {
+            bytes = audioFile.getBytes();
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Não foi possível ler o áudio enviado.");
+        }
+        return transcribe(bytes);
+    }
+
+    /**
+     * Mesmo fluxo, mas para chamadas internas (ex: bot do WhatsApp) que não têm
+     * um MultipartFile de upload HTTP — só os bytes brutos do áudio.
+     */
+    public String transcribe(byte[] audioBytes) {
+        if (audioBytes == null || audioBytes.length == 0) {
+            throw new IllegalArgumentException("Nenhum áudio foi enviado.");
+        }
+        if (audioBytes.length > MAX_AUDIO_BYTES) {
+            throw new IllegalArgumentException("Áudio muito grande (máximo 10MB).");
+        }
+        if (!hasValidAudioSignature(audioBytes)) {
             throw new IllegalArgumentException("Arquivo enviado não é um áudio reconhecido.");
         }
         try {
@@ -60,7 +77,12 @@ public class WhisperService {
                     .build();
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("audio_file", audioFile.getResource());
+            body.add("audio_file", new ByteArrayResource(audioBytes) {
+                @Override
+                public String getFilename() {
+                    return "audio";
+                }
+            });
 
             String response = client.post()
                     .uri(uriBuilder -> uriBuilder
@@ -94,14 +116,10 @@ public class WhisperService {
      * Content-Type do multipart é enviado pelo cliente e é trivialmente falsificável;
      * aqui checamos a assinatura real (magic bytes) dos formatos de áudio aceitos.
      */
-    private boolean hasValidAudioSignature(MultipartFile audioFile) {
+    private boolean hasValidAudioSignature(byte[] audioBytes) {
+        int read = Math.min(MAGIC_BYTES_TO_READ, audioBytes.length);
         byte[] header = new byte[MAGIC_BYTES_TO_READ];
-        int read;
-        try (InputStream in = audioFile.getInputStream()) {
-            read = in.readNBytes(header, 0, header.length);
-        } catch (IOException e) {
-            return false;
-        }
+        System.arraycopy(audioBytes, 0, header, 0, read);
         if (read < 4) {
             return false;
         }

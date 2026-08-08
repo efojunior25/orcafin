@@ -32,9 +32,10 @@ services:
       DB_USER: orcafin
       DB_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
       JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET no .env}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?defina INTERNAL_API_KEY no .env}
       SERVER_PORT: 8080
       OLLAMA_BASE_URL: http://ollama:11434
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}
       WHISPER_BASE_URL: http://whisper:9000
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_APP_PASSWORD: ${MAIL_APP_PASSWORD:-}
@@ -116,8 +117,26 @@ services:
       - "127.0.0.1:3001:3000"
       - "127.0.0.1:2222:22"
 
+  # Bot do WhatsApp (whatsapp-web.js, não-oficial) — só sobe quando pedido
+  # explicitamente. Usa um número secundário, nunca o principal (risco de
+  # banimento por violar os Termos de Uso do WhatsApp, ver README).
+  whatsapp-bot:
+    build:
+      context: ./whatsapp-bot
+    container_name: orcafin-whatsapp-bot
+    restart: unless-stopped
+    profiles: ["whatsapp"]
+    depends_on:
+      - backend
+    environment:
+      BACKEND_URL: http://backend:8080
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?defina INTERNAL_API_KEY no .env}
+    volumes:
+      - orcafin-whatsapp-session:/data/session
+
 volumes:
   orcafin-postgres-data:
   orcafin-ollama-data:
   orcafin-whisper-data:
   orcafin-gitea-data:
+  orcafin-whatsapp-session:

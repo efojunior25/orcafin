@@ -40,3 +40,5 @@ app:
     base-url: ${WHISPER_BASE_URL:http://localhost:9000}
   mail-from-name: ${MAIL_FROM_NAME:OrçaFin Suporte}
   public-url: ${APP_PUBLIC_URL:http://localhost:5173}
+  internal:
+    api-key: ${INTERNAL_API_KEY:}
