@@ -36,6 +36,10 @@ services:
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
       WHISPER_BASE_URL: http://whisper:9000
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_APP_PASSWORD: ${MAIL_APP_PASSWORD:-}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-OrçaFin Suporte}
+      APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://localhost:5173}
     ports:
       - "8080:8080"
 

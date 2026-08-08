@@ -64,6 +64,9 @@ export default function Login() {
           {loading ? 'Entrando...' : 'Entrar'}
         </button>
         <div className="auth-footer">
+          <Link to="/forgot-password">Esqueci minha senha</Link>
+        </div>
+        <div className="auth-footer">
           Não tem conta? <Link to="/register">Cadastre-se</Link>
         </div>
       </form>

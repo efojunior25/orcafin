@@ -28,3 +28,13 @@ export async function getLoginHistory(): Promise<LoginAudit[]> {
   const { data } = await api.get<LoginAudit[]>('/api/auth/login-history');
   return data;
 }
+
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+  const { data } = await api.post<{ message: string }>('/api/auth/forgot-password', { email });
+  return data;
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+  const { data } = await api.post<{ message: string }>('/api/auth/reset-password', { token, newPassword });
+  return data;
+}

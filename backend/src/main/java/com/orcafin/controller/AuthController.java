@@ -1,16 +1,21 @@
 package com.orcafin.controller;
 
 import com.orcafin.dto.AuthResponse;
+import com.orcafin.dto.ForgotPasswordRequest;
 import com.orcafin.dto.LoginAuditResponse;
 import com.orcafin.dto.LoginRequest;
 import com.orcafin.dto.RegisterRequest;
+import com.orcafin.dto.ResetPasswordRequest;
 import com.orcafin.entity.LoginAudit;
+import com.orcafin.entity.PasswordResetToken;
 import com.orcafin.entity.User;
 import com.orcafin.repository.LoginAuditRepository;
+import com.orcafin.repository.PasswordResetTokenRepository;
 import com.orcafin.repository.UserRepository;
 import com.orcafin.security.JwtService;
 import com.orcafin.security.RateLimiterService;
 import com.orcafin.security.SecurityUtils;
+import com.orcafin.service.EmailService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +28,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -35,6 +43,9 @@ public class AuthController {
     private static final Duration LOGIN_WINDOW = Duration.ofMinutes(5);
     private static final int REGISTER_MAX_ATTEMPTS = 10;
     private static final Duration REGISTER_WINDOW = Duration.ofMinutes(5);
+    private static final int FORGOT_PASSWORD_MAX_ATTEMPTS = 5;
+    private static final Duration FORGOT_PASSWORD_WINDOW = Duration.ofMinutes(15);
+    private static final Duration RESET_TOKEN_TTL = Duration.ofHours(1);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -42,6 +53,8 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final RateLimiterService rateLimiterService;
     private final LoginAuditRepository loginAuditRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final EmailService emailService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
@@ -60,8 +73,49 @@ public class AuthController {
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         userRepository.save(user);
 
+        emailService.sendWelcomeEmail(user.getEmail(), user.getName());
+
         String token = jwtService.generateToken(user);
         return ResponseEntity.ok(new AuthResponse(token, user.getName(), user.getEmail()));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request, HttpServletRequest httpRequest) {
+        String key = "forgot-password:" + clientIp(httpRequest);
+        rateLimiterService.checkAllowed(key, FORGOT_PASSWORD_MAX_ATTEMPTS, FORGOT_PASSWORD_WINDOW,
+                "Muitas solicitações. Tente novamente mais tarde.");
+        rateLimiterService.recordAttempt(key, FORGOT_PASSWORD_WINDOW);
+
+        userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
+            PasswordResetToken resetToken = new PasswordResetToken();
+            resetToken.setUser(user);
+            resetToken.setToken(UUID.randomUUID().toString());
+            resetToken.setExpiresAt(Instant.now().plus(RESET_TOKEN_TTL));
+            passwordResetTokenRepository.save(resetToken);
+            emailService.sendPasswordResetEmail(user.getEmail(), user.getName(), resetToken.getToken());
+        });
+
+        // Mesma resposta exista ou não o email, pra não revelar quais emails estão cadastrados.
+        return ResponseEntity.ok(Map.of("message", "Se esse email existir, enviamos um link de redefinição."));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(request.getToken())
+                .orElseThrow(() -> new IllegalArgumentException("Link de redefinição inválido ou expirado."));
+
+        if (resetToken.isUsed() || Instant.now().isAfter(resetToken.getExpiresAt())) {
+            throw new IllegalArgumentException("Link de redefinição inválido ou expirado.");
+        }
+
+        User user = resetToken.getUser();
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        resetToken.setUsed(true);
+        passwordResetTokenRepository.save(resetToken);
+
+        return ResponseEntity.ok(Map.of("message", "Senha redefinida com sucesso."));
     }
 
     @PostMapping("/login")

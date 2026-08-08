@@ -12,6 +12,8 @@ import Categories from './pages/Categories';
 import CreditCards from './pages/CreditCards';
 import Budgets from './pages/Budgets';
 import LoginHistory from './pages/LoginHistory';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -29,6 +31,8 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route
               path="/"
               element={
