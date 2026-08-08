@@ -61,6 +61,11 @@ services:
     container_name: orcafin-ollama
     restart: "no"
     profiles: ["ai"]
+    environment:
+      # Pula a tentativa de CUDA v13/Vulkan (cada uma tem seu próprio timeout de
+      # descoberta) e vai direto pro CUDA v12 — pode convergir mais rápido dentro
+      # da janela de detecção da GPU sob a virtualização do WSL2.
+      OLLAMA_LLM_LIBRARY: cuda_v12
     volumes:
       - orcafin-ollama-data:/root/.ollama
     ports:
