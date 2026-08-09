@@ -35,4 +35,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     List<Transaction> findByUserIdAndDateBetween(@Param("userId") UUID userId, @Param("start") LocalDate start, @Param("end") LocalDate end);
 
     List<Transaction> findByCreditCardIdAndDateBetween(UUID creditCardId, LocalDate start, LocalDate end);
+
+    List<Transaction> findByCreditCardIdAndDateAfter(UUID creditCardId, LocalDate date);
 }

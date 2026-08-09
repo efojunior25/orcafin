@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -33,6 +34,7 @@ public class TransactionService {
     private final AccountRepository accountRepository;
     private final CategoryRepository categoryRepository;
     private final CreditCardRepository creditCardRepository;
+    private final CreditCardService creditCardService;
 
     // Sem filtro de data, o app pode acumular anos de histórico; limita pra evitar
     // consultas/payloads gigantes num único request (o histórico é sempre navegado
@@ -68,6 +70,17 @@ public class TransactionService {
             throw new IllegalArgumentException("A conta de destino deve ser diferente da conta de origem");
         }
 
+        checkCreditLimit(creditCard, request.getType(), request.getAmount(), null);
+
+        boolean isInstallment = creditCard != null
+                && request.getType() == TransactionType.DESPESA
+                && request.getInstallments() != null
+                && request.getInstallments() > 1;
+
+        if (isInstallment) {
+            return createInstallments(user, request, creditCard, category);
+        }
+
         Transaction transaction = new Transaction();
         transaction.setUser(user);
         transaction.setAccount(account);
@@ -96,6 +109,40 @@ public class TransactionService {
         return new TransactionResponse(transaction);
     }
 
+    /**
+     * Divide o valor total em N parcelas mensais lançadas na fatura de cada mês.
+     * A última parcela absorve o resto do arredondamento pra soma bater o valor exato.
+     */
+    private TransactionResponse createInstallments(User user, TransactionRequest request, CreditCard creditCard, Category category) {
+        int count = request.getInstallments();
+        BigDecimal total = request.getAmount();
+        BigDecimal base = total.divide(BigDecimal.valueOf(count), 2, RoundingMode.DOWN);
+        BigDecimal lastAmount = total.subtract(base.multiply(BigDecimal.valueOf(count - 1)));
+
+        UUID groupId = UUID.randomUUID();
+        Transaction first = null;
+        for (int i = 0; i < count; i++) {
+            Transaction installment = new Transaction();
+            installment.setUser(user);
+            installment.setCreditCard(creditCard);
+            installment.setCategory(category);
+            installment.setType(TransactionType.DESPESA);
+            installment.setGroup(request.getGroup());
+            installment.setAmount(i == count - 1 ? lastAmount : base);
+            installment.setDescription(request.getDescription() + " (" + (i + 1) + "/" + count + ")");
+            installment.setDate(request.getDate().plusMonths(i));
+            installment.setPaymentMethod(request.getPaymentMethod());
+            installment.setInstallmentGroupId(groupId);
+            installment.setInstallmentNumber(i + 1);
+            installment.setInstallmentTotal(count);
+            transactionRepository.save(installment);
+            if (i == 0) {
+                first = installment;
+            }
+        }
+        return new TransactionResponse(first);
+    }
+
     @Transactional
     public TransactionResponse updateTransaction(User user, UUID transactionId, TransactionRequest request) {
         Transaction transaction = getOwnedTransaction(user, transactionId);
@@ -118,6 +165,8 @@ public class TransactionService {
         if (isTransfer && newDestinationAccount.getId().equals(newAccount.getId())) {
             throw new IllegalArgumentException("A conta de destino deve ser diferente da conta de origem");
         }
+
+        checkCreditLimit(newCreditCard, request.getType(), request.getAmount(), transaction);
 
         transaction.setAccount(newAccount);
         transaction.setCreditCard(newCreditCard);
@@ -164,6 +213,33 @@ public class TransactionService {
             }
         }
         transactionRepository.delete(transaction);
+    }
+
+    /**
+     * Bloqueia despesas que ultrapassariam o limite disponível do cartão. `excluding`
+     * é a transação sendo editada (se houver) — sua contribuição atual pro limite usado
+     * é descontada antes de simular o novo valor, senão ela contaria em dobro.
+     */
+    private void checkCreditLimit(CreditCard creditCard, TransactionType type, BigDecimal amount, Transaction excluding) {
+        if (creditCard == null || type != TransactionType.DESPESA) {
+            return;
+        }
+        BigDecimal used = creditCardService.usedLimit(creditCard);
+        if (excluding != null && excluding.getCreditCard() != null
+                && excluding.getCreditCard().getId().equals(creditCard.getId())) {
+            if (excluding.getType() == TransactionType.DESPESA) {
+                used = used.subtract(excluding.getAmount());
+            } else if (excluding.getType() == TransactionType.RECEITA) {
+                used = used.add(excluding.getAmount());
+            }
+        }
+        BigDecimal projected = used.add(amount);
+        if (projected.compareTo(creditCard.getCreditLimit()) > 0) {
+            BigDecimal available = creditCard.getCreditLimit().subtract(used).max(BigDecimal.ZERO);
+            throw new IllegalArgumentException(
+                    "Limite disponível no cartão: R$ " + available.setScale(2, RoundingMode.HALF_UP)
+                            + ". Essa compra ultrapassa o limite.");
+        }
     }
 
     private Account resolveAccountForNonTransfer(User user, TransactionRequest request) {

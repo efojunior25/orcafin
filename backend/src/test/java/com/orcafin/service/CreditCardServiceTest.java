@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.Mockito;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -50,6 +51,9 @@ class CreditCardServiceTest {
         creditCard.setClosingDay(5);
         creditCard.setDueDay(12);
         creditCard.setCreditLimit(new BigDecimal("1000"));
+
+        Mockito.lenient().when(transactionRepository.findByCreditCardIdAndDateAfter(any(), any()))
+                .thenReturn(List.of());
     }
 
     private Transaction fakeTransaction(TransactionType type, String amount) {

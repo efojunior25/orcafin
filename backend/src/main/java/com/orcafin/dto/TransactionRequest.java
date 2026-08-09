@@ -4,6 +4,8 @@ import com.orcafin.entity.PaymentMethod;
 import com.orcafin.entity.RecurrenceFrequency;
 import com.orcafin.entity.TransactionGroup;
 import com.orcafin.entity.TransactionType;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Getter;
@@ -47,4 +49,9 @@ public class TransactionRequest {
     private RecurrenceFrequency recurrenceFrequency;
 
     private LocalDate recurrenceEndDate;
+
+    /** Número de parcelas (cartão de crédito apenas). Null ou 1 = sem parcelamento. */
+    @Min(1)
+    @Max(48)
+    private Integer installments;
 }

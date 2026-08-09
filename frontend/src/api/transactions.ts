@@ -24,6 +24,8 @@ export interface Transaction {
   isRecurring: boolean;
   recurrenceFrequency: RecurrenceFrequency | null;
   recurrenceEndDate: string | null;
+  installmentNumber: number | null;
+  installmentTotal: number | null;
 }
 
 export interface TransactionInput {
@@ -40,6 +42,7 @@ export interface TransactionInput {
   isRecurring: boolean;
   recurrenceFrequency: RecurrenceFrequency | null;
   recurrenceEndDate: string | null;
+  installments?: number | null;
 }
 
 export async function getTransactions(from?: string, to?: string): Promise<Transaction[]> {

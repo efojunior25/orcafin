@@ -69,6 +69,13 @@ public class Transaction {
 
     private LocalDate recurrenceEndDate;
 
+    /** Agrupa as parcelas de uma mesma compra parcelada no cartão (null = não parcelada). */
+    private UUID installmentGroupId;
+
+    private Integer installmentNumber;
+
+    private Integer installmentTotal;
+
     @Column(nullable = false)
     private Instant createdAt = Instant.now();
 }

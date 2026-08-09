@@ -32,6 +32,8 @@ public class TransactionResponse {
     private final boolean isRecurring;
     private final RecurrenceFrequency recurrenceFrequency;
     private final LocalDate recurrenceEndDate;
+    private final Integer installmentNumber;
+    private final Integer installmentTotal;
     private final Instant createdAt;
 
     public TransactionResponse(Transaction transaction) {
@@ -53,6 +55,8 @@ public class TransactionResponse {
         this.isRecurring = transaction.isRecurring();
         this.recurrenceFrequency = transaction.getRecurrenceFrequency();
         this.recurrenceEndDate = transaction.getRecurrenceEndDate();
+        this.installmentNumber = transaction.getInstallmentNumber();
+        this.installmentTotal = transaction.getInstallmentTotal();
         this.createdAt = transaction.getCreatedAt();
     }
 }

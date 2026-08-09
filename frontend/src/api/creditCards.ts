@@ -7,6 +7,7 @@ export interface CreditCard {
   closingDay: number;
   dueDay: number;
   currentInvoiceTotal: number;
+  usedLimit: number;
 }
 
 export interface CreditCardInput {

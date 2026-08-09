@@ -5,6 +5,14 @@ import { formatCurrency, parseDecimal } from '../utils/format';
 import { getErrorMessage } from '../utils/errors';
 import './Accounts.css';
 
+function limitStatus(used: number, limit: number): 'ok' | 'warn' | 'over' {
+  if (limit <= 0) return 'ok';
+  const pct = used / limit;
+  if (pct >= 1) return 'over';
+  if (pct >= 0.8) return 'warn';
+  return 'ok';
+}
+
 export default function CreditCards() {
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,6 +119,20 @@ export default function CreditCards() {
               </div>
               <div className="account-balance text-danger">{formatCurrency(card.currentInvoiceTotal)}</div>
               <div className="recent-tx-meta">Fatura atual · Limite {formatCurrency(card.creditLimit)}</div>
+              {card.creditLimit > 0 && (
+                <>
+                  <div className="limit-bar-track">
+                    <div
+                      className={`limit-bar-fill ${limitStatus(card.usedLimit, card.creditLimit)}`}
+                      style={{ width: `${Math.min(100, (card.usedLimit / card.creditLimit) * 100)}%` }}
+                    />
+                  </div>
+                  <div className="recent-tx-meta">
+                    {formatCurrency(card.usedLimit)} usado de {formatCurrency(card.creditLimit)} (
+                    {Math.round((card.usedLimit / card.creditLimit) * 100)}%)
+                  </div>
+                </>
+              )}
               <div className="account-actions">
                 <button className="btn btn-secondary" onClick={() => openEdit(card)}>
                   Editar

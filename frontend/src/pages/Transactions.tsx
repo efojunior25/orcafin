@@ -33,6 +33,7 @@ function emptyForm(accounts: Account[], categories: Category[]): TransactionInpu
     isRecurring: false,
     recurrenceFrequency: null,
     recurrenceEndDate: null,
+    installments: 1,
   };
 }
 
@@ -200,6 +201,7 @@ export default function Transactions() {
       description: tx.description,
       date: tx.date,
       paymentMethod: tx.paymentMethod,
+      installments: 1,
       isRecurring: tx.isRecurring,
       recurrenceFrequency: tx.recurrenceFrequency,
       recurrenceEndDate: tx.recurrenceEndDate,
@@ -384,6 +386,9 @@ export default function Transactions() {
                   <td>
                     {tx.description}
                     {tx.isRecurring && <span className="recurring-badge">↻ {recurrenceFrequencyLabels[tx.recurrenceFrequency ?? ''] ?? ''}</span>}
+                    {tx.installmentTotal && tx.installmentTotal > 1 && (
+                      <span className="recurring-badge">{tx.installmentNumber}/{tx.installmentTotal}</span>
+                    )}
                   </td>
                   <td>{tx.type === 'TRANSFERENCIA' ? 'Transferência' : tx.categoryName}</td>
                   <td>{tx.group ? transactionGroupLabels[tx.group] : '—'}</td>
@@ -501,19 +506,36 @@ export default function Transactions() {
 
             <div className="form-row">
               {form.type === 'DESPESA' && form.creditCardId ? (
-                <div className="form-field">
-                  <label>Cartão</label>
-                  <select
-                    value={form.creditCardId}
-                    onChange={(e) => setForm((f) => ({ ...f, creditCardId: e.target.value }))}
-                  >
-                    {creditCards.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <>
+                  <div className="form-field">
+                    <label>Cartão</label>
+                    <select
+                      value={form.creditCardId}
+                      onChange={(e) => setForm((f) => ({ ...f, creditCardId: e.target.value }))}
+                    >
+                      {creditCards.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {!editing && (
+                    <div className="form-field">
+                      <label>Parcelas</label>
+                      <select
+                        value={form.installments ?? 1}
+                        onChange={(e) => setForm((f) => ({ ...f, installments: Number(e.target.value) }))}
+                      >
+                        {Array.from({ length: 48 }, (_, i) => i + 1).map((n) => (
+                          <option key={n} value={n}>
+                            {n === 1 ? 'À vista' : `${n}x de ${formatCurrency((form.amount || 0) / n)}`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="form-field">
                   <label>{form.type === 'TRANSFERENCIA' ? 'Conta de origem' : 'Conta'}</label>

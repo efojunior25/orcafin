@@ -16,12 +16,14 @@ import com.orcafin.repository.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,7 +31,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 class TransactionServiceTest {
@@ -42,6 +46,8 @@ class TransactionServiceTest {
     private CategoryRepository categoryRepository;
     @Mock
     private CreditCardRepository creditCardRepository;
+    @Mock
+    private CreditCardService creditCardService;
 
     @InjectMocks
     private TransactionService transactionService;
@@ -144,9 +150,11 @@ class TransactionServiceTest {
         CreditCard creditCard = new CreditCard();
         creditCard.setId(UUID.randomUUID());
         creditCard.setUser(user);
+        creditCard.setCreditLimit(new BigDecimal("1000.00"));
 
         when(creditCardRepository.findById(creditCard.getId())).thenReturn(Optional.of(creditCard));
         when(categoryRepository.findById(despesaCategory.getId())).thenReturn(Optional.of(despesaCategory));
+        when(creditCardService.usedLimit(creditCard)).thenReturn(BigDecimal.ZERO);
 
         TransactionRequest request = baseRequest(TransactionType.DESPESA, new BigDecimal("99.90"));
         request.setCreditCardId(creditCard.getId());
@@ -156,6 +164,61 @@ class TransactionServiceTest {
 
         assertThat(account.getBalance()).isEqualByComparingTo("100.00");
         assertThat(otherAccount.getBalance()).isEqualByComparingTo("50.00");
+    }
+
+    @Test
+    void purchaseExceedingAvailableLimitIsRejected() {
+        CreditCard creditCard = new CreditCard();
+        creditCard.setId(UUID.randomUUID());
+        creditCard.setUser(user);
+        creditCard.setCreditLimit(new BigDecimal("100.00"));
+
+        when(creditCardRepository.findById(creditCard.getId())).thenReturn(Optional.of(creditCard));
+        when(categoryRepository.findById(despesaCategory.getId())).thenReturn(Optional.of(despesaCategory));
+        when(creditCardService.usedLimit(creditCard)).thenReturn(new BigDecimal("80.00"));
+
+        TransactionRequest request = baseRequest(TransactionType.DESPESA, new BigDecimal("50.00"));
+        request.setCreditCardId(creditCard.getId());
+        request.setCategoryId(despesaCategory.getId());
+
+        assertThatThrownBy(() -> transactionService.createTransaction(user, request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Limite disponível");
+    }
+
+    @Test
+    void installmentPurchaseGeneratesOneTransactionPerMonthSummingToTotalAmount() {
+        CreditCard creditCard = new CreditCard();
+        creditCard.setId(UUID.randomUUID());
+        creditCard.setUser(user);
+        creditCard.setCreditLimit(new BigDecimal("1000.00"));
+
+        when(creditCardRepository.findById(creditCard.getId())).thenReturn(Optional.of(creditCard));
+        when(categoryRepository.findById(despesaCategory.getId())).thenReturn(Optional.of(despesaCategory));
+        when(creditCardService.usedLimit(creditCard)).thenReturn(BigDecimal.ZERO);
+
+        TransactionRequest request = baseRequest(TransactionType.DESPESA, new BigDecimal("100.00"));
+        request.setCreditCardId(creditCard.getId());
+        request.setCategoryId(despesaCategory.getId());
+        request.setDescription("Notebook");
+        request.setInstallments(3);
+
+        transactionService.createTransaction(user, request);
+
+        ArgumentCaptor<Transaction> captor = ArgumentCaptor.forClass(Transaction.class);
+        verify(transactionRepository, times(3)).save(captor.capture());
+        List<Transaction> saved = captor.getAllValues();
+
+        BigDecimal sum = saved.stream().map(Transaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        assertThat(sum).isEqualByComparingTo("100.00");
+        assertThat(saved.get(0).getDate()).isEqualTo(request.getDate());
+        assertThat(saved.get(1).getDate()).isEqualTo(request.getDate().plusMonths(1));
+        assertThat(saved.get(2).getDate()).isEqualTo(request.getDate().plusMonths(2));
+        assertThat(saved.get(0).getInstallmentNumber()).isEqualTo(1);
+        assertThat(saved.get(2).getInstallmentNumber()).isEqualTo(3);
+        assertThat(saved).allMatch(t -> t.getInstallmentTotal() == 3);
+        assertThat(saved).allMatch(t -> t.getInstallmentGroupId() != null);
+        assertThat(saved.get(0).getDescription()).isEqualTo("Notebook (1/3)");
     }
 
     @Test

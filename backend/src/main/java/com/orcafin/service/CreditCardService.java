@@ -30,7 +30,10 @@ public class CreditCardService {
 
     public List<CreditCardResponse> listCreditCards(User user) {
         return creditCardRepository.findByUserId(user.getId()).stream()
-                .map(cc -> new CreditCardResponse(cc, currentInvoiceTotal(cc)))
+                .map(cc -> {
+                    BigDecimal invoiceTotal = currentInvoiceTotal(cc);
+                    return new CreditCardResponse(cc, invoiceTotal, usedLimit(cc, invoiceTotal));
+                })
                 .collect(Collectors.toList());
     }
 
@@ -43,7 +46,7 @@ public class CreditCardService {
         creditCard.setClosingDay(request.getClosingDay());
         creditCard.setDueDay(request.getDueDay());
         creditCardRepository.save(creditCard);
-        return new CreditCardResponse(creditCard, BigDecimal.ZERO);
+        return new CreditCardResponse(creditCard, BigDecimal.ZERO, BigDecimal.ZERO);
     }
 
     @Transactional
@@ -54,7 +57,32 @@ public class CreditCardService {
         creditCard.setClosingDay(request.getClosingDay());
         creditCard.setDueDay(request.getDueDay());
         creditCardRepository.save(creditCard);
-        return new CreditCardResponse(creditCard, currentInvoiceTotal(creditCard));
+        return new CreditCardResponse(creditCard, currentInvoiceTotal(creditCard), usedLimit(creditCard));
+    }
+
+    /**
+     * Limite consumido: fatura atual (ainda não fechada) + todas as parcelas/lançamentos
+     * futuros já lançados no cartão. Faturas passadas não entram, pois o app não tem
+     * conceito de "fatura paga" — presume-se que já foram quitadas fora daqui.
+     */
+    public BigDecimal usedLimit(CreditCard creditCard) {
+        return usedLimit(creditCard, currentInvoiceTotal(creditCard));
+    }
+
+    private BigDecimal usedLimit(CreditCard creditCard, BigDecimal currentInvoiceTotal) {
+        LocalDate today = LocalDate.now();
+        LocalDate periodEnd = currentInvoicePeriod(creditCard, today)[1];
+
+        BigDecimal total = currentInvoiceTotal;
+        List<Transaction> future = transactionRepository.findByCreditCardIdAndDateAfter(creditCard.getId(), periodEnd);
+        for (Transaction t : future) {
+            if (t.getType() == TransactionType.DESPESA) {
+                total = total.add(t.getAmount());
+            } else if (t.getType() == TransactionType.RECEITA) {
+                total = total.subtract(t.getAmount());
+            }
+        }
+        return total;
     }
 
     @Transactional
