@@ -1,0 +1,74 @@
+.suggestion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 60vh;
+  overflow-y: auto;
+  margin: 16px 0;
+}
+
+.suggestion-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.suggestion-item input[type='checkbox'] {
+  margin-top: 4px;
+}
+
+.suggestion-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.suggestion-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.suggestion-badge {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 3px 8px;
+  border-radius: 100px;
+  font-weight: 700;
+}
+
+.suggestion-badge-add {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  color: var(--accent);
+}
+
+.suggestion-badge-remove {
+  background: color-mix(in srgb, var(--danger) 20%, transparent);
+  color: var(--danger);
+}
+
+.suggestion-badge-fix_date,
+.suggestion-badge-move_account {
+  background: color-mix(in srgb, var(--warning) 20%, transparent);
+  color: var(--warning);
+}
+
+.suggestion-amount {
+  font-weight: 700;
+}
+
+.suggestion-desc {
+  font-weight: 600;
+}
+
+.suggestion-meta,
+.suggestion-reason {
+  font-size: 13px;
+  color: var(--text-secondary);
+}

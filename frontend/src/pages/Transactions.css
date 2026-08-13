@@ -39,6 +39,11 @@
   padding: 8px 10px;
 }
 
+.filters-search {
+  min-width: 200px;
+  flex: 1;
+}
+
 .type-toggle {
   display: flex;
   gap: 8px;

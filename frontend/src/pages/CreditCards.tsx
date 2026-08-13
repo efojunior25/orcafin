@@ -3,6 +3,7 @@ import * as creditCardsApi from '../api/creditCards';
 import type { CreditCard } from '../api/creditCards';
 import { formatCurrency, parseDecimal } from '../utils/format';
 import { getErrorMessage } from '../utils/errors';
+import StatementImportModal from '../components/StatementImportModal';
 import './Accounts.css';
 
 function limitStatus(used: number, limit: number): 'ok' | 'warn' | 'over' {
@@ -18,6 +19,7 @@ export default function CreditCards() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
+  const [importingCard, setImportingCard] = useState<CreditCard | null>(null);
   const [editing, setEditing] = useState<CreditCard | null>(null);
   const [name, setName] = useState('');
   const [creditLimit, setCreditLimit] = useState(0);
@@ -141,6 +143,11 @@ export default function CreditCards() {
                   Excluir
                 </button>
               </div>
+              <div className="account-actions">
+                <button className="btn btn-ghost" onClick={() => setImportingCard(card)}>
+                  Importar fatura
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -202,6 +209,14 @@ export default function CreditCards() {
             </div>
           </div>
         </div>
+      )}
+
+      {importingCard && (
+        <StatementImportModal
+          creditCardId={importingCard.id}
+          onClose={() => setImportingCard(null)}
+          onApplied={load}
+        />
       )}
     </div>
   );

@@ -42,6 +42,11 @@ export default function Transactions() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [typeFilter, setTypeFilter] = useState<'ALL' | TransactionType>('ALL');
+  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
+  const [groupFilter, setGroupFilter] = useState<string>('ALL');
+  const [accountFilter, setAccountFilter] = useState<string>('ALL');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>('ALL');
+  const [searchText, setSearchText] = useState('');
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -91,9 +96,21 @@ export default function Transactions() {
   }, [year, month]);
 
   const filtered = useMemo(() => {
-    if (typeFilter === 'ALL') return transactions;
-    return transactions.filter((t) => t.type === typeFilter);
-  }, [transactions, typeFilter]);
+    const search = searchText.trim().toLowerCase();
+    return transactions.filter((t) => {
+      if (typeFilter !== 'ALL' && t.type !== typeFilter) return false;
+      if (categoryFilter !== 'ALL' && t.categoryId !== categoryFilter) return false;
+      if (groupFilter !== 'ALL' && t.group !== groupFilter) return false;
+      if (paymentMethodFilter !== 'ALL' && t.paymentMethod !== paymentMethodFilter) return false;
+      if (accountFilter !== 'ALL') {
+        const [kind, id] = accountFilter.split(':');
+        if (kind === 'acc' && t.accountId !== id) return false;
+        if (kind === 'cc' && t.creditCardId !== id) return false;
+      }
+      if (search && !t.description.toLowerCase().includes(search)) return false;
+      return true;
+    });
+  }, [transactions, typeFilter, categoryFilter, groupFilter, accountFilter, paymentMethodFilter, searchText]);
 
   const categoriesForType = useMemo(
     () => categories.filter((c) => c.type === form.type),
@@ -358,6 +375,50 @@ export default function Transactions() {
           <option value="DESPESA">Despesas</option>
           <option value="TRANSFERENCIA">Transferências</option>
         </select>
+        <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+          <option value="ALL">Todas as categorias</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)}>
+          <option value="ALL">Todos os grupos</option>
+          {transactionGroups.map((g) => (
+            <option key={g} value={g}>
+              {transactionGroupLabels[g]}
+            </option>
+          ))}
+        </select>
+        <select value={accountFilter} onChange={(e) => setAccountFilter(e.target.value)}>
+          <option value="ALL">Todas as contas</option>
+          {accounts.map((a) => (
+            <option key={`acc:${a.id}`} value={`acc:${a.id}`}>
+              {a.name}
+            </option>
+          ))}
+          {creditCards.map((c) => (
+            <option key={`cc:${c.id}`} value={`cc:${c.id}`}>
+              {c.name} (cartão)
+            </option>
+          ))}
+        </select>
+        <select value={paymentMethodFilter} onChange={(e) => setPaymentMethodFilter(e.target.value)}>
+          <option value="ALL">Todas as formas de pagamento</option>
+          {paymentMethods.map((p) => (
+            <option key={p} value={p}>
+              {paymentMethodLabels[p]}
+            </option>
+          ))}
+        </select>
+        <input
+          type="text"
+          placeholder="Buscar por nome..."
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          className="filters-search"
+        />
       </div>
 
       {loading ? (

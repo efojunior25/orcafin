@@ -3,6 +3,7 @@ import * as accountsApi from '../api/accounts';
 import type { Account, AccountType } from '../api/accounts';
 import { formatCurrency, accountTypeLabels } from '../utils/format';
 import { getErrorMessage } from '../utils/errors';
+import StatementImportModal from '../components/StatementImportModal';
 import './Accounts.css';
 
 const typeOptions: AccountType[] = ['CORRENTE', 'POUPANCA', 'CARTEIRA'];
@@ -16,6 +17,7 @@ export default function Accounts() {
   const [name, setName] = useState('');
   const [type, setType] = useState<AccountType>('CORRENTE');
   const [saving, setSaving] = useState(false);
+  const [importingAccount, setImportingAccount] = useState<Account | null>(null);
 
   async function load() {
     setLoading(true);
@@ -110,6 +112,11 @@ export default function Accounts() {
                   Excluir
                 </button>
               </div>
+              <div className="account-actions">
+                <button className="btn btn-ghost" onClick={() => setImportingAccount(acc)}>
+                  Importar extrato
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -143,6 +150,14 @@ export default function Accounts() {
             </div>
           </div>
         </div>
+      )}
+
+      {importingAccount && (
+        <StatementImportModal
+          accountId={importingAccount.id}
+          onClose={() => setImportingAccount(null)}
+          onApplied={load}
+        />
       )}
     </div>
   );
