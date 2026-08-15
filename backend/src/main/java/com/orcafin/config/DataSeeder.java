@@ -17,12 +17,13 @@ public class DataSeeder implements CommandLineRunner {
 
     private static final List<String> DESPESA_CATEGORIES = List.of(
             "Alimentação", "Transporte", "Transporte Público", "Moradia", "Saúde", "Educação",
-            "Lazer", "Compras", "Contas e Serviços", "Tarifas e Juros", "Outros"
+            "Lazer", "Compras", "Contas e Serviços", "Tarifas e Juros", "Empréstimos",
+            "Ajustes e Estornos", "Outros"
     );
 
     private static final List<String> RECEITA_CATEGORIES = List.of(
             "Salário", "Freelance", "Investimentos", "Rendimentos (Caixinha/Investimento)",
-            "Presente", "Outros"
+            "Presente", "Ajustes e Estornos", "Outros"
     );
 
     @Override
