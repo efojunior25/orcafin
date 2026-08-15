@@ -5,5 +5,7 @@ public enum PaymentMethod {
     DEBITO,
     CREDITO,
     PIX,
+    TED,
+    DOC,
     TRANSFERENCIA
 }

@@ -5,6 +5,7 @@ import com.orcafin.dto.TransactionResponse;
 import com.orcafin.entity.Account;
 import com.orcafin.entity.Category;
 import com.orcafin.entity.CreditCard;
+import com.orcafin.entity.PrepaidCard;
 import com.orcafin.entity.Transaction;
 import com.orcafin.entity.TransactionType;
 import com.orcafin.entity.User;
@@ -35,6 +36,7 @@ public class TransactionService {
     private final CategoryRepository categoryRepository;
     private final CreditCardRepository creditCardRepository;
     private final CreditCardService creditCardService;
+    private final PrepaidCardService prepaidCardService;
 
     // Sem filtro de data, o app pode acumular anos de histórico; limita pra evitar
     // consultas/payloads gigantes num único request (o histórico é sempre navegado
@@ -61,8 +63,11 @@ public class TransactionService {
         Account account = isTransfer
                 ? getOwnedAccount(user, request.getAccountId())
                 : resolveAccountForNonTransfer(user, request);
-        CreditCard creditCard = (!isTransfer && request.getAccountId() == null)
+        CreditCard creditCard = (!isTransfer && request.getAccountId() == null && request.getCreditCardId() != null)
                 ? getOwnedCreditCard(user, request.getCreditCardId())
+                : null;
+        PrepaidCard prepaidCard = (!isTransfer && request.getAccountId() == null && creditCard == null)
+                ? getOwnedPrepaidCard(user, request.getPrepaidCardId())
                 : null;
         Category category = isTransfer ? null : getAccessibleCategory(user, request.getCategoryId());
         Account destinationAccount = isTransfer ? getOwnedAccount(user, requireDestinationAccountId(request)) : null;
@@ -85,6 +90,7 @@ public class TransactionService {
         transaction.setUser(user);
         transaction.setAccount(account);
         transaction.setCreditCard(creditCard);
+        transaction.setPrepaidCard(prepaidCard);
         transaction.setCategory(category);
         transaction.setDestinationAccount(destinationAccount);
         transaction.setType(request.getType());
@@ -103,6 +109,9 @@ public class TransactionService {
             if (destinationAccount != null) {
                 accountRepository.save(destinationAccount);
             }
+        }
+        if (prepaidCard != null) {
+            applyPrepaidBalance(prepaidCard, transaction.getType(), transaction.getAmount());
         }
         transactionRepository.save(transaction);
 
@@ -152,13 +161,20 @@ public class TransactionService {
         if (oldAccount != null) {
             revertBalance(oldAccount, oldDestinationAccount, transaction.getType(), transaction.getAmount());
         }
+        PrepaidCard oldPrepaidCard = transaction.getPrepaidCard();
+        if (oldPrepaidCard != null) {
+            revertPrepaidBalance(oldPrepaidCard, transaction.getType(), transaction.getAmount());
+        }
 
         boolean isTransfer = request.getType() == TransactionType.TRANSFERENCIA;
         Account newAccount = isTransfer
                 ? getOwnedAccount(user, request.getAccountId())
                 : resolveAccountForNonTransfer(user, request);
-        CreditCard newCreditCard = (!isTransfer && request.getAccountId() == null)
+        CreditCard newCreditCard = (!isTransfer && request.getAccountId() == null && request.getCreditCardId() != null)
                 ? getOwnedCreditCard(user, request.getCreditCardId())
+                : null;
+        PrepaidCard newPrepaidCard = (!isTransfer && request.getAccountId() == null && newCreditCard == null)
+                ? getOwnedPrepaidCard(user, request.getPrepaidCardId())
                 : null;
         Category newCategory = isTransfer ? null : getAccessibleCategory(user, request.getCategoryId());
         Account newDestinationAccount = isTransfer ? getOwnedAccount(user, requireDestinationAccountId(request)) : null;
@@ -170,6 +186,7 @@ public class TransactionService {
 
         transaction.setAccount(newAccount);
         transaction.setCreditCard(newCreditCard);
+        transaction.setPrepaidCard(newPrepaidCard);
         transaction.setCategory(newCategory);
         transaction.setDestinationAccount(newDestinationAccount);
         transaction.setType(request.getType());
@@ -195,6 +212,9 @@ public class TransactionService {
         if (newDestinationAccount != null) {
             accountRepository.save(newDestinationAccount);
         }
+        if (newPrepaidCard != null) {
+            applyPrepaidBalance(newPrepaidCard, transaction.getType(), transaction.getAmount());
+        }
         transactionRepository.save(transaction);
 
         return new TransactionResponse(transaction);
@@ -211,6 +231,10 @@ public class TransactionService {
             if (destinationAccount != null) {
                 accountRepository.save(destinationAccount);
             }
+        }
+        PrepaidCard prepaidCard = transaction.getPrepaidCard();
+        if (prepaidCard != null) {
+            revertPrepaidBalance(prepaidCard, transaction.getType(), transaction.getAmount());
         }
         transactionRepository.delete(transaction);
     }
@@ -259,6 +283,29 @@ public class TransactionService {
             throw new ForbiddenException("Você não tem acesso a este cartão");
         }
         return creditCard;
+    }
+
+    private PrepaidCard getOwnedPrepaidCard(User user, UUID prepaidCardId) {
+        if (prepaidCardId == null) {
+            throw new IllegalArgumentException("Informe uma conta, um cartão de crédito ou um cartão pré-pago");
+        }
+        return prepaidCardService.getOwnedPrepaidCard(user, prepaidCardId);
+    }
+
+    private void applyPrepaidBalance(PrepaidCard prepaidCard, TransactionType type, BigDecimal amount) {
+        if (type == TransactionType.RECEITA) {
+            prepaidCardService.credit(prepaidCard, amount);
+        } else if (type == TransactionType.DESPESA) {
+            prepaidCardService.debit(prepaidCard, amount);
+        }
+    }
+
+    private void revertPrepaidBalance(PrepaidCard prepaidCard, TransactionType type, BigDecimal amount) {
+        if (type == TransactionType.RECEITA) {
+            prepaidCardService.debit(prepaidCard, amount);
+        } else if (type == TransactionType.DESPESA) {
+            prepaidCardService.credit(prepaidCard, amount);
+        }
     }
 
     private UUID requireDestinationAccountId(TransactionRequest request) {

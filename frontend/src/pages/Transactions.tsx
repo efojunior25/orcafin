@@ -5,6 +5,8 @@ import * as accountsApi from '../api/accounts';
 import type { Account } from '../api/accounts';
 import * as creditCardsApi from '../api/creditCards';
 import type { CreditCard } from '../api/creditCards';
+import * as prepaidCardsApi from '../api/prepaidCards';
+import type { PrepaidCard } from '../api/prepaidCards';
 import * as categoriesApi from '../api/categories';
 import type { Category } from '../api/categories';
 import * as aiApi from '../api/ai';
@@ -13,15 +15,31 @@ import { getErrorMessage } from '../utils/errors';
 import './Accounts.css';
 import './Transactions.css';
 
-const paymentMethods: PaymentMethod[] = ['DINHEIRO', 'DEBITO', 'CREDITO', 'PIX', 'TRANSFERENCIA'];
+const paymentMethods: PaymentMethod[] = ['DINHEIRO', 'DEBITO', 'CREDITO', 'PIX', 'TED', 'DOC', 'TRANSFERENCIA'];
 const recurrenceFrequencies: RecurrenceFrequency[] = ['DIARIA', 'SEMANAL', 'MENSAL', 'ANUAL'];
-const transactionGroups: TransactionGroup[] = ['ASSINATURAS', 'CONTAS_FIXAS_CASA', 'COMPRAS_PONTUAIS', 'DIVIDAS_PARCELAS', 'OUTROS'];
+const transactionGroups: TransactionGroup[] = [
+  'ASSINATURAS',
+  'CONTAS_FIXAS_CASA',
+  'COMPRAS_PONTUAIS',
+  'DIVIDAS_PARCELAS',
+  'ALIMENTACAO_CASA',
+  'RESTAURANTES',
+  'FATURA_CARTAO',
+  'VALE_TRANSPORTE',
+  'VALE_ALIMENTACAO_REFEICAO',
+  'INVESTIMENTOS',
+  'CAIXINHAS',
+  'AJUSTES_ESTORNOS',
+  'TARIFAS_JUROS',
+  'OUTROS',
+];
 
 function emptyForm(accounts: Account[], categories: Category[]): TransactionInput {
   const despesaCategories = categories.filter((c) => c.type === 'DESPESA');
   return {
     accountId: accounts[0]?.id ?? null,
     creditCardId: null,
+    prepaidCardId: null,
     categoryId: despesaCategories[0]?.id ?? null,
     destinationAccountId: null,
     type: 'DESPESA',
@@ -51,6 +69,7 @@ export default function Transactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
+  const [prepaidCards, setPrepaidCards] = useState<PrepaidCard[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -73,15 +92,17 @@ export default function Transactions() {
     setError('');
     try {
       const { from, to } = monthRange(year, month);
-      const [tx, acc, cc, cat] = await Promise.all([
+      const [tx, acc, cc, pc, cat] = await Promise.all([
         transactionsApi.getTransactions(from, to),
         accountsApi.getAccounts(),
         creditCardsApi.getCreditCards(),
+        prepaidCardsApi.getPrepaidCards(),
         categoriesApi.getCategories(),
       ]);
       setTransactions(tx);
       setAccounts(acc);
       setCreditCards(cc);
+      setPrepaidCards(pc);
       setCategories(cat);
     } catch (err) {
       setError(getErrorMessage(err, 'Não foi possível carregar as transações.'));
@@ -106,6 +127,7 @@ export default function Transactions() {
         const [kind, id] = accountFilter.split(':');
         if (kind === 'acc' && t.accountId !== id) return false;
         if (kind === 'cc' && t.creditCardId !== id) return false;
+        if (kind === 'pc' && t.prepaidCardId !== id) return false;
       }
       if (search && !t.description.toLowerCase().includes(search)) return false;
       return true;
@@ -133,6 +155,7 @@ export default function Transactions() {
     setForm({
       accountId: accounts[0]?.id ?? null,
       creditCardId: null,
+      prepaidCardId: null,
       categoryId: parsed.categoryId,
       destinationAccountId: null,
       type: parsed.type,
@@ -210,6 +233,7 @@ export default function Transactions() {
     setForm({
       accountId: tx.accountId,
       creditCardId: tx.creditCardId,
+      prepaidCardId: tx.prepaidCardId,
       categoryId: tx.categoryId,
       destinationAccountId: tx.destinationAccountId,
       type: tx.type,
@@ -236,6 +260,7 @@ export default function Transactions() {
         type,
         accountId,
         creditCardId: null,
+        prepaidCardId: null,
         categoryId: null,
         destinationAccountId: otherAccount?.id ?? null,
       }));
@@ -248,22 +273,25 @@ export default function Transactions() {
       type,
       accountId: type === 'RECEITA' ? accountId : f.accountId,
       creditCardId: type === 'RECEITA' ? null : f.creditCardId,
+      prepaidCardId: type === 'RECEITA' ? null : f.prepaidCardId,
       categoryId: firstCat?.id ?? null,
       destinationAccountId: null,
     }));
   }
 
-  function setPaymentSource(source: 'CONTA' | 'CARTAO') {
+  function setPaymentSource(source: 'CONTA' | 'CARTAO' | 'PRE_PAGO') {
     if (source === 'CARTAO') {
-      setForm((f) => ({ ...f, accountId: null, creditCardId: f.creditCardId ?? creditCards[0]?.id ?? null }));
+      setForm((f) => ({ ...f, accountId: null, prepaidCardId: null, creditCardId: f.creditCardId ?? creditCards[0]?.id ?? null }));
+    } else if (source === 'PRE_PAGO') {
+      setForm((f) => ({ ...f, accountId: null, creditCardId: null, prepaidCardId: f.prepaidCardId ?? prepaidCards[0]?.id ?? null }));
     } else {
-      setForm((f) => ({ ...f, creditCardId: null, accountId: f.accountId ?? accounts[0]?.id ?? null }));
+      setForm((f) => ({ ...f, creditCardId: null, prepaidCardId: null, accountId: f.accountId ?? accounts[0]?.id ?? null }));
     }
   }
 
   async function handleSave() {
     const isTransfer = form.type === 'TRANSFERENCIA';
-    if ((!form.accountId && !form.creditCardId) || !form.amount || !form.date) {
+    if ((!form.accountId && !form.creditCardId && !form.prepaidCardId) || !form.amount || !form.date) {
       setError('Preencha todos os campos obrigatórios.');
       return;
     }
@@ -403,6 +431,11 @@ export default function Transactions() {
               {c.name} (cartão)
             </option>
           ))}
+          {prepaidCards.map((c) => (
+            <option key={`pc:${c.id}`} value={`pc:${c.id}`}>
+              {c.name} (pré-pago)
+            </option>
+          ))}
         </select>
         <select value={paymentMethodFilter} onChange={(e) => setPaymentMethodFilter(e.target.value)}>
           <option value="ALL">Todas as formas de pagamento</option>
@@ -456,7 +489,7 @@ export default function Transactions() {
                   <td>
                     {tx.type === 'TRANSFERENCIA'
                       ? `${tx.accountName} → ${tx.destinationAccountName}`
-                      : tx.creditCardName ?? tx.accountName}
+                      : tx.creditCardName ?? tx.prepaidCardName ?? tx.accountName}
                   </td>
                   <td>{paymentMethodLabels[tx.paymentMethod] ?? tx.paymentMethod}</td>
                   <td
@@ -549,7 +582,7 @@ export default function Transactions() {
               <div className="type-toggle">
                 <button
                   type="button"
-                  className={!form.creditCardId ? 'active-despesa' : ''}
+                  className={!form.creditCardId && !form.prepaidCardId ? 'active-despesa' : ''}
                   onClick={() => setPaymentSource('CONTA')}
                 >
                   Conta
@@ -561,6 +594,14 @@ export default function Transactions() {
                   disabled={creditCards.length === 0}
                 >
                   Cartão de Crédito
+                </button>
+                <button
+                  type="button"
+                  className={form.prepaidCardId ? 'active-despesa' : ''}
+                  onClick={() => setPaymentSource('PRE_PAGO')}
+                  disabled={prepaidCards.length === 0}
+                >
+                  Cartão Pré-pago
                 </button>
               </div>
             )}
@@ -597,6 +638,20 @@ export default function Transactions() {
                     </div>
                   )}
                 </>
+              ) : form.type === 'DESPESA' && form.prepaidCardId ? (
+                <div className="form-field">
+                  <label>Cartão pré-pago</label>
+                  <select
+                    value={form.prepaidCardId}
+                    onChange={(e) => setForm((f) => ({ ...f, prepaidCardId: e.target.value }))}
+                  >
+                    {prepaidCards.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               ) : (
                 <div className="form-field">
                   <label>{form.type === 'TRANSFERENCIA' ? 'Conta de origem' : 'Conta'}</label>

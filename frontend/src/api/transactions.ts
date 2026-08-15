@@ -1,9 +1,23 @@
 import api from './client';
 
 export type TransactionType = 'RECEITA' | 'DESPESA' | 'TRANSFERENCIA';
-export type PaymentMethod = 'DINHEIRO' | 'DEBITO' | 'CREDITO' | 'PIX' | 'TRANSFERENCIA';
+export type PaymentMethod = 'DINHEIRO' | 'DEBITO' | 'CREDITO' | 'PIX' | 'TED' | 'DOC' | 'TRANSFERENCIA';
 export type RecurrenceFrequency = 'DIARIA' | 'SEMANAL' | 'MENSAL' | 'ANUAL';
-export type TransactionGroup = 'ASSINATURAS' | 'CONTAS_FIXAS_CASA' | 'COMPRAS_PONTUAIS' | 'DIVIDAS_PARCELAS' | 'OUTROS';
+export type TransactionGroup =
+  | 'ASSINATURAS'
+  | 'CONTAS_FIXAS_CASA'
+  | 'COMPRAS_PONTUAIS'
+  | 'DIVIDAS_PARCELAS'
+  | 'ALIMENTACAO_CASA'
+  | 'RESTAURANTES'
+  | 'FATURA_CARTAO'
+  | 'VALE_TRANSPORTE'
+  | 'VALE_ALIMENTACAO_REFEICAO'
+  | 'INVESTIMENTOS'
+  | 'CAIXINHAS'
+  | 'AJUSTES_ESTORNOS'
+  | 'TARIFAS_JUROS'
+  | 'OUTROS';
 
 export interface Transaction {
   id: string;
@@ -11,6 +25,8 @@ export interface Transaction {
   accountName: string | null;
   creditCardId: string | null;
   creditCardName: string | null;
+  prepaidCardId: string | null;
+  prepaidCardName: string | null;
   categoryId: string | null;
   categoryName: string | null;
   destinationAccountId: string | null;
@@ -31,6 +47,7 @@ export interface Transaction {
 export interface TransactionInput {
   accountId: string | null;
   creditCardId: string | null;
+  prepaidCardId: string | null;
   categoryId: string | null;
   destinationAccountId: string | null;
   type: TransactionType;

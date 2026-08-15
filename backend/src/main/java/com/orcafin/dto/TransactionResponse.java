@@ -19,6 +19,8 @@ public class TransactionResponse {
     private final String accountName;
     private final UUID creditCardId;
     private final String creditCardName;
+    private final UUID prepaidCardId;
+    private final String prepaidCardName;
     private final UUID categoryId;
     private final String categoryName;
     private final UUID destinationAccountId;
@@ -42,6 +44,8 @@ public class TransactionResponse {
         this.accountName = transaction.getAccount() != null ? transaction.getAccount().getName() : null;
         this.creditCardId = transaction.getCreditCard() != null ? transaction.getCreditCard().getId() : null;
         this.creditCardName = transaction.getCreditCard() != null ? transaction.getCreditCard().getName() : null;
+        this.prepaidCardId = transaction.getPrepaidCard() != null ? transaction.getPrepaidCard().getId() : null;
+        this.prepaidCardName = transaction.getPrepaidCard() != null ? transaction.getPrepaidCard().getName() : null;
         this.categoryId = transaction.getCategory() != null ? transaction.getCategory().getId() : null;
         this.categoryName = transaction.getCategory() != null ? transaction.getCategory().getName() : null;
         this.destinationAccountId = transaction.getDestinationAccount() != null ? transaction.getDestinationAccount().getId() : null;

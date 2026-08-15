@@ -34,6 +34,10 @@ public class Transaction {
     private CreditCard creditCard;
 
     @ManyToOne(optional = true)
+    @JoinColumn(name = "prepaid_card_id", nullable = true)
+    private PrepaidCard prepaidCard;
+
+    @ManyToOne(optional = true)
     @JoinColumn(name = "category_id", nullable = true)
     private Category category;
 

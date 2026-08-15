@@ -23,6 +23,8 @@ public class TransactionRequest {
 
     private UUID creditCardId;
 
+    private UUID prepaidCardId;
+
     private UUID categoryId;
 
     private UUID destinationAccountId;
