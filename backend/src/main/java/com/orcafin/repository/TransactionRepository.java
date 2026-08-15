@@ -37,4 +37,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     List<Transaction> findByCreditCardIdAndDateBetween(UUID creditCardId, LocalDate start, LocalDate end);
 
     List<Transaction> findByCreditCardIdAndDateAfter(UUID creditCardId, LocalDate date);
+
+    boolean existsByPrepaidCardIdAndDateAndDescription(UUID prepaidCardId, LocalDate date, String description);
 }

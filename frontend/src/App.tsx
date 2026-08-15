@@ -12,6 +12,9 @@ const Transactions = lazy(() => import('./pages/Transactions'));
 const Accounts = lazy(() => import('./pages/Accounts'));
 const Categories = lazy(() => import('./pages/Categories'));
 const CreditCards = lazy(() => import('./pages/CreditCards'));
+const PrepaidCards = lazy(() => import('./pages/PrepaidCards'));
+const Vaults = lazy(() => import('./pages/Vaults'));
+const Investments = lazy(() => import('./pages/Investments'));
 const Budgets = lazy(() => import('./pages/Budgets'));
 const LoginHistory = lazy(() => import('./pages/LoginHistory'));
 const Profile = lazy(() => import('./pages/Profile'));
@@ -78,6 +81,30 @@ function App() {
               element={
                 <ProtectedLayout>
                   <CreditCards />
+                </ProtectedLayout>
+              }
+            />
+            <Route
+              path="/prepaid-cards"
+              element={
+                <ProtectedLayout>
+                  <PrepaidCards />
+                </ProtectedLayout>
+              }
+            />
+            <Route
+              path="/vaults"
+              element={
+                <ProtectedLayout>
+                  <Vaults />
+                </ProtectedLayout>
+              }
+            />
+            <Route
+              path="/investments"
+              element={
+                <ProtectedLayout>
+                  <Investments />
                 </ProtectedLayout>
               }
             />

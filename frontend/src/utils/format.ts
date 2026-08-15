@@ -51,6 +51,8 @@ export const paymentMethodLabels: Record<string, string> = {
   DEBITO: 'Débito',
   CREDITO: 'Crédito',
   PIX: 'Pix',
+  TED: 'TED',
+  DOC: 'DOC',
   TRANSFERENCIA: 'Transferência',
 };
 
@@ -59,7 +61,47 @@ export const transactionGroupLabels: Record<string, string> = {
   CONTAS_FIXAS_CASA: 'Contas Fixas da Casa',
   COMPRAS_PONTUAIS: 'Compras Pontuais',
   DIVIDAS_PARCELAS: 'Dívidas / Parcelas',
+  ALIMENTACAO_CASA: 'Alimentação de Casa',
+  RESTAURANTES: 'Restaurantes',
+  FATURA_CARTAO: 'Fatura de Cartão',
+  VALE_TRANSPORTE: 'Vale-Transporte',
+  VALE_ALIMENTACAO_REFEICAO: 'Vale-Alimentação / Refeição',
+  INVESTIMENTOS: 'Investimentos',
+  CAIXINHAS: 'Caixinhas',
+  AJUSTES_ESTORNOS: 'Ajustes e Estornos',
+  TARIFAS_JUROS: 'Tarifas e Juros',
   OUTROS: 'Outros',
+};
+
+export const prepaidCardTypeLabels: Record<string, string> = {
+  VALE_ALIMENTACAO: 'Vale Alimentação',
+  VALE_REFEICAO: 'Vale Refeição',
+  USO_LIVRE: 'Uso Livre',
+  MOBILIDADE: 'Mobilidade / Combustível',
+  VALE_TRANSPORTE: 'Vale-Transporte',
+};
+
+export const transitSubtypeLabels: Record<string, string> = {
+  URBANO: 'Urbano',
+  INTERMUNICIPAL: 'Intermunicipal',
+  METRO: 'Metrô',
+  ESTUDANTE_MEIA_PASSAGEM: 'Estudante (meia-passagem)',
+};
+
+export const investmentTypeLabels: Record<string, string> = {
+  RENDA_FIXA: 'Renda Fixa',
+  TESOURO_DIRETO: 'Tesouro Direto',
+  ACOES: 'Ações',
+  FUNDOS_IMOBILIARIOS: 'Fundos Imobiliários',
+  CRIPTOMOEDAS: 'Criptomoedas',
+  FUNDOS: 'Fundos',
+  OUTROS: 'Outros',
+};
+
+export const vaultMovementTypeLabels: Record<string, string> = {
+  APORTE: 'Aporte',
+  RESGATE: 'Resgate',
+  RENDIMENTO: 'Rendimento',
 };
 
 export const transactionTypeLabels: Record<string, string> = {
