@@ -58,6 +58,9 @@ public class Transaction {
 
     private String description;
 
+    /** Para quem/onde foi o pagamento (ex: nome da pessoa, estabelecimento) — separado da descrição do gasto. */
+    private String payee;
+
     @Column(nullable = false)
     private LocalDate date;
 

@@ -40,6 +40,8 @@ public class TransactionRequest {
 
     private String description;
 
+    private String payee;
+
     @NotNull
     private LocalDate date;
 

@@ -46,6 +46,7 @@ function emptyForm(accounts: Account[], categories: Category[]): TransactionInpu
     group: null,
     amount: 0,
     description: '',
+    payee: '',
     date: todayISO(),
     paymentMethod: 'DEBITO',
     isRecurring: false,
@@ -129,7 +130,7 @@ export default function Transactions() {
         if (kind === 'cc' && t.creditCardId !== id) return false;
         if (kind === 'pc' && t.prepaidCardId !== id) return false;
       }
-      if (search && !t.description.toLowerCase().includes(search)) return false;
+      if (search && !t.description.toLowerCase().includes(search) && !(t.payee ?? '').toLowerCase().includes(search)) return false;
       return true;
     });
   }, [transactions, typeFilter, categoryFilter, groupFilter, accountFilter, paymentMethodFilter, searchText]);
@@ -162,6 +163,7 @@ export default function Transactions() {
       group: null,
       amount: parsed.amount,
       description: parsed.description,
+      payee: '',
       date: parsed.date,
       paymentMethod: 'DEBITO',
       isRecurring: false,
@@ -240,6 +242,7 @@ export default function Transactions() {
       group: tx.group,
       amount: tx.amount,
       description: tx.description,
+      payee: tx.payee ?? '',
       date: tx.date,
       paymentMethod: tx.paymentMethod,
       installments: 1,
@@ -479,6 +482,7 @@ export default function Transactions() {
                   <td>{formatDate(tx.date)}</td>
                   <td>
                     {tx.description}
+                    {tx.payee && <div className="recent-tx-meta">{tx.payee}</div>}
                     {tx.isRecurring && <span className="recurring-badge">↻ {recurrenceFrequencyLabels[tx.recurrenceFrequency ?? ''] ?? ''}</span>}
                     {tx.installmentTotal && tx.installmentTotal > 1 && (
                       <span className="recurring-badge">{tx.installmentNumber}/{tx.installmentTotal}</span>
@@ -569,13 +573,23 @@ export default function Transactions() {
               </div>
             </div>
 
-            <div className="form-field">
-              <label>Descrição</label>
-              <input
-                value={form.description}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                placeholder="Ex: Supermercado"
-              />
+            <div className="form-row">
+              <div className="form-field">
+                <label>Descrição</label>
+                <input
+                  value={form.description}
+                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                  placeholder="Ex: Supermercado do mês"
+                />
+              </div>
+              <div className="form-field">
+                <label>Favorecido (opcional)</label>
+                <input
+                  value={form.payee ?? ''}
+                  onChange={(e) => setForm((f) => ({ ...f, payee: e.target.value }))}
+                  placeholder="Ex: Nordestão, João Silva"
+                />
+              </div>
             </div>
 
             {form.type === 'DESPESA' && (

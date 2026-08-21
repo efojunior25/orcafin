@@ -97,6 +97,7 @@ public class TransactionService {
         transaction.setGroup(request.getGroup());
         transaction.setAmount(request.getAmount());
         transaction.setDescription(request.getDescription());
+        transaction.setPayee(request.getPayee());
         transaction.setDate(request.getDate());
         transaction.setPaymentMethod(request.getPaymentMethod());
         transaction.setRecurring(request.isRecurring());
@@ -139,6 +140,7 @@ public class TransactionService {
             installment.setGroup(request.getGroup());
             installment.setAmount(i == count - 1 ? lastAmount : base);
             installment.setDescription(request.getDescription() + " (" + (i + 1) + "/" + count + ")");
+            installment.setPayee(request.getPayee());
             installment.setDate(request.getDate().plusMonths(i));
             installment.setPaymentMethod(request.getPaymentMethod());
             installment.setInstallmentGroupId(groupId);
@@ -193,6 +195,7 @@ public class TransactionService {
         transaction.setGroup(request.getGroup());
         transaction.setAmount(request.getAmount());
         transaction.setDescription(request.getDescription());
+        transaction.setPayee(request.getPayee());
         transaction.setDate(request.getDate());
         transaction.setPaymentMethod(request.getPaymentMethod());
         transaction.setRecurring(request.isRecurring());

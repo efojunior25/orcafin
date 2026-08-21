@@ -35,6 +35,7 @@ export interface Transaction {
   group: TransactionGroup | null;
   amount: number;
   description: string;
+  payee: string | null;
   date: string;
   paymentMethod: PaymentMethod;
   isRecurring: boolean;
@@ -54,6 +55,7 @@ export interface TransactionInput {
   group: TransactionGroup | null;
   amount: number;
   description: string;
+  payee: string | null;
   date: string;
   paymentMethod: PaymentMethod;
   isRecurring: boolean;

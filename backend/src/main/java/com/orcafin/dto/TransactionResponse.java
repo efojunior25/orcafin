@@ -29,6 +29,7 @@ public class TransactionResponse {
     private final TransactionGroup group;
     private final BigDecimal amount;
     private final String description;
+    private final String payee;
     private final LocalDate date;
     private final PaymentMethod paymentMethod;
     private final boolean isRecurring;
@@ -54,6 +55,7 @@ public class TransactionResponse {
         this.group = transaction.getGroup();
         this.amount = transaction.getAmount();
         this.description = transaction.getDescription();
+        this.payee = transaction.getPayee();
         this.date = transaction.getDate();
         this.paymentMethod = transaction.getPaymentMethod();
         this.isRecurring = transaction.isRecurring();
