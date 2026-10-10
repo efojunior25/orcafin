@@ -3,6 +3,7 @@ package com.orcafin.config;
 import com.orcafin.security.InternalApiKeyFilter;
 import com.orcafin.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -27,6 +28,9 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final InternalApiKeyFilter internalApiKeyFilter;
+
+    @Value("${app.cors.allowed-origins}")
+    private String[] allowedOrigins;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -66,19 +70,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Padrões restritos ao necessário: dev local, rede doméstica (celular na mesma Wi-Fi)
-        // nas faixas privadas de uso mais comum, e o túnel público (Cloudflare).
-        // Evita aceitar credenciais de qualquer host em 192.168.*.*/10.*.*.* (ex.: redes
-        // corporativas/públicas compartilhadas), restringindo às faixas RFC1918 típicas de
-        // roteador doméstico (192.168.0-255.x) e à faixa 10.x usada por VPNs comuns.
-        configuration.setAllowedOriginPatterns(List.of(
-                "http://localhost:*",
-                "http://127.0.0.1:*",
-                "http://192.168.*.*:*",
-                "https://*.trycloudflare.com",
-                "https://*.cfargotunnel.com",
-                "https://*.prupru.org"
-        ));
+        // Origens vêm de CORS_ALLOWED_ORIGINS (ver application.yml). Não incluir curingas de
+        // domínios onde qualquer pessoa cria subdomínio (ex.: *.trycloudflare.com): o cookie de
+        // login é aceito com credenciais a partir de qualquer origem desta lista.
+        configuration.setAllowedOriginPatterns(List.of(allowedOrigins));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);

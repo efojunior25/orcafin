@@ -40,6 +40,13 @@ public class InternalWhatsappController {
 
     private static final int MESSAGE_MAX_ATTEMPTS = 30;
     private static final Duration MESSAGE_WINDOW = Duration.ofHours(1);
+    // O código de vinculação tem só 6 dígitos: sem limite, dá pra tentar códigos até acertar
+    // e vincular outro número à conta. Limite por telefone + um teto global (contra várias
+    // linhas tentando ao mesmo tempo). Só tentativas erradas contam.
+    private static final int VERIFY_MAX_FAILURES_PER_PHONE = 5;
+    private static final int VERIFY_MAX_FAILURES_GLOBAL = 30;
+    private static final Duration VERIFY_WINDOW = Duration.ofMinutes(15);
+    private static final String VERIFY_GLOBAL_KEY = "whatsapp-verify:global";
 
     private final UserRepository userRepository;
     private final PhoneVerificationTokenRepository phoneVerificationTokenRepository;
@@ -51,12 +58,20 @@ public class InternalWhatsappController {
 
     @PostMapping("/verify-code")
     public ResponseEntity<WhatsappBotResponse> verifyCode(@Valid @RequestBody WhatsappVerifyCodeRequest request) {
+        String phoneKey = "whatsapp-verify:" + request.getPhone();
+        rateLimiterService.checkAllowed(phoneKey, VERIFY_MAX_FAILURES_PER_PHONE, VERIFY_WINDOW,
+                "Muitas tentativas de código. Espere 15 minutos e gere um novo código no app.");
+        rateLimiterService.checkAllowed(VERIFY_GLOBAL_KEY, VERIFY_MAX_FAILURES_GLOBAL, VERIFY_WINDOW,
+                "Vinculação temporariamente bloqueada por excesso de tentativas. Tente de novo em 15 minutos.");
+
         Optional<PhoneVerificationToken> tokenOpt = phoneVerificationTokenRepository.findByCode(request.getCode().trim());
         if (tokenOpt.isEmpty()) {
+            recordVerifyFailure(phoneKey);
             return ResponseEntity.ok(new WhatsappBotResponse("Código inválido. Gere um novo no app (Perfil > Vincular WhatsApp)."));
         }
         PhoneVerificationToken token = tokenOpt.get();
         if (token.isUsed() || Instant.now().isAfter(token.getExpiresAt())) {
+            recordVerifyFailure(phoneKey);
             return ResponseEntity.ok(new WhatsappBotResponse("Esse código expirou. Gere um novo no app."));
         }
 
@@ -70,6 +85,7 @@ public class InternalWhatsappController {
         }
         token.setUsed(true);
         phoneVerificationTokenRepository.save(token);
+        rateLimiterService.reset(phoneKey);
 
         return ResponseEntity.ok(new WhatsappBotResponse(
                 "Número vinculado à conta de " + user.getName() + "! Já pode mandar seus lançamentos por aqui."));
@@ -149,5 +165,10 @@ public class InternalWhatsappController {
         pendingWhatsappEntryService.clear(request.getPhone());
 
         return ResponseEntity.ok(new WhatsappBotResponse("Lançamento salvo! ✅"));
+    }
+
+    private void recordVerifyFailure(String phoneKey) {
+        rateLimiterService.recordAttempt(phoneKey, VERIFY_WINDOW);
+        rateLimiterService.recordAttempt(VERIFY_GLOBAL_KEY, VERIFY_WINDOW);
     }
 }
